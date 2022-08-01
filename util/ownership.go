@@ -6,12 +6,12 @@ import (
 )
 
 func CanSeeProfile(viewerId string, viewedId string, params database.QueryParams) bool {
-	viewerAccount, err := database.FindDocumentById[model.Account](params, viewerId, viewedId)
+	viewerAccount, err := database.FindDocumentById[model.Account](params, viewerId)
 	if err != nil {
 		return false
 	}
 
-	viewedAccount, err := database.FindDocumentById[model.Account](params, viewerId, viewedId)
+	viewedAccount, err := database.FindDocumentById[model.Account](params, viewedId)
 	if err != nil {
 		return false
 	}
