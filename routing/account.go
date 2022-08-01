@@ -21,7 +21,7 @@ func ApplyAccountRoutes(router *gin.Engine, mongoClient *mongo.Client) {
 		v1.GET("/profile/id/:value", ctrl.GetProfile("id"))
 		v1.GET("/profile/username/:value", ctrl.GetProfile("username"))
 
-		v1.POST("/recipe/standard")
+		v1.POST("/recipe/standard", ctrl.CreateStandardAccount())
 		v1.POST("/recipe/apple")
 		v1.POST("/recipe/google")
 	}
