@@ -1,0 +1,21 @@
+# Binaries, plugins, libs
+*.dll
+*.dylib
+*.exe
+*.exe~
+*.so
+
+# Testing
+*.test
+*.tmp
+
+# Config files
+config.toml
+config.json
+
+# Machine files
+.DS_Store
+
+# IDE Files
+*.iml
+.idea

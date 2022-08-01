@@ -1,0 +1,12 @@
+[auth]
+jwt = "trainingclub123456789"
+
+[mongo]
+uri = "mongodb://mongodb:27017/prod"
+
+[s3]
+key = "YANJ2JZ6CVPV2JOJ6WSY"
+secret = "ppVrV6Zkpp4ewVbwDDMMK1NPMLuB6iYg2Gh4L2NyaMg"
+token = "dop_v1_22018b6ead2e3eb205a6252e517904231f4623aabd4d1de5ea3de3ed9d21fc3e"
+endpoint = "sfo3.digitaloceanspaces.com"
+region = "us-west-3"
