@@ -11,10 +11,10 @@ WORKDIR /app
 COPY . .
 
 # Build binaries
-RUN go build -o main .
+RUN go build -o ares .
 
 # Expose port
 EXPOSE 8080
 
 # Run exec
-CMD ["./main"]
+CMD ["./ares"]

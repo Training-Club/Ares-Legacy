@@ -1,4 +1,4 @@
-package ares
+package main
 
 import (
 	"ares/config"
@@ -19,4 +19,9 @@ func main() {
 	router.Use(gin.Logger())
 
 	routing.ApplyRoutes(router, mongoClient)
+
+	err = router.Run(":8080")
+	if err != nil {
+		panic("failed to start gin engine: " + err.Error())
+	}
 }
