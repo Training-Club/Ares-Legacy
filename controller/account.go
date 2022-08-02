@@ -18,20 +18,32 @@ func getAccountWithKeyValue(
 	ctx *gin.Context,
 	key string,
 ) (model.Account, error) {
-	k := ctx.GetString(key)
-	v := ctx.GetString("value")
+	v := ctx.Param("value")
+
+	if key == "id" {
+		id, err := primitive.ObjectIDFromHex(v)
+		if err != nil {
+			return model.Account{}, err
+		}
+
+		return database.FindDocumentByKeyValue[primitive.ObjectID, model.Account](database.QueryParams{
+			DatabaseName:   controller.DatabaseName,
+			CollectionName: controller.CollectionName,
+			MongoClient:    controller.DB,
+		}, key, id)
+	}
 
 	return database.FindDocumentByKeyValue[string, model.Account](database.QueryParams{
 		DatabaseName:   controller.DatabaseName,
 		CollectionName: controller.CollectionName,
 		MongoClient:    controller.DB,
-	}, k, v)
+	}, key, v)
 }
 
 func (controller *AresController) GetAccountAvailability() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		key := ctx.GetString("key")
-		value := ctx.GetString("value")
+		key := ctx.Param("key")
+		value := ctx.Param("value")
 
 		if key != "username" && key != "email" {
 			ctx.AbortWithStatusJSON(400, gin.H{"message": "key field must be 'username' or 'email'"})
@@ -62,7 +74,12 @@ func (controller *AresController) GetAccount(key string) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		account, err := getAccountWithKeyValue(controller, ctx, key)
 		if err != nil {
-			ctx.AbortWithStatus(http.StatusNotFound)
+			if err == mongo.ErrNoDocuments {
+				ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"message": "account not found"})
+				return
+			}
+
+			ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "failed to find account: " + err.Error()})
 			return
 		}
 
@@ -95,7 +112,7 @@ func (controller *AresController) GetSimilarAccountsByUsername() gin.HandlerFunc
 	}
 
 	return func(ctx *gin.Context) {
-		username := ctx.GetString("username")
+		username := ctx.Param("username")
 
 		filter := bson.M{"name": primitive.Regex{Pattern: username, Options: "i"}}
 		accounts, err := database.FindManyDocumentsByFilter[model.Account](database.QueryParams{
