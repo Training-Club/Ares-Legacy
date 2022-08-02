@@ -4,13 +4,14 @@ import (
 	"ares/database"
 	"ares/model"
 	"ares/util"
+	"net/http"
+	"reflect"
+
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/crypto/bcrypt"
-	"net/http"
-	"reflect"
 )
 
 func getAccountWithKeyValue(
@@ -21,16 +22,11 @@ func getAccountWithKeyValue(
 	v := ctx.Param("value")
 
 	if key == "id" {
-		id, err := primitive.ObjectIDFromHex(v)
-		if err != nil {
-			return model.Account{}, err
-		}
-
-		return database.FindDocumentByKeyValue[primitive.ObjectID, model.Account](database.QueryParams{
+		return database.FindDocumentById[model.Account](database.QueryParams{
 			DatabaseName:   controller.DatabaseName,
 			CollectionName: controller.CollectionName,
 			MongoClient:    controller.DB,
-		}, key, id)
+		}, v)
 	}
 
 	return database.FindDocumentByKeyValue[string, model.Account](database.QueryParams{
