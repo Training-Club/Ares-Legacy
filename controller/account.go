@@ -4,8 +4,10 @@ import (
 	"ares/database"
 	"ares/model"
 	"ares/util"
+	"fmt"
 	"net/http"
 	"reflect"
+	"regexp"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
@@ -14,12 +16,22 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// Returns a single account matching key/value pair
+// key = Document key
+//
+// value is derived from context params, searching for a :value string in the query
 func getAccountWithKeyValue(
 	controller *AresController,
 	ctx *gin.Context,
 	key string,
 ) (model.Account, error) {
 	v := ctx.Param("value")
+	re := regexp.MustCompile(`[^a-zA-Z0-9._-]+`)
+	match := re.MatchString(v)
+
+	if match {
+		return model.Account{}, fmt.Errorf("value must be alphanumeric")
+	}
 
 	if key == "id" {
 		return database.FindDocumentById[model.Account](database.QueryParams{
@@ -36,6 +48,27 @@ func getAccountWithKeyValue(
 	}, key, v)
 }
 
+// Returns an array of accounts matching a
+// similar string for the provided key/value pair
+func getAccountsFuzzySearch(
+	controller *AresController,
+	key string,
+	value string,
+) ([]model.Account, error) {
+	filter := bson.M{key: primitive.Regex{Pattern: value, Options: "i"}}
+	accounts, err := database.FindManyDocumentsByFilter[model.Account](database.QueryParams{
+		MongoClient:    controller.DB,
+		DatabaseName:   controller.DatabaseName,
+		CollectionName: controller.CollectionName,
+	}, filter)
+
+	return accounts, err
+}
+
+// GetAccountAvailability checks the database to see if the provided
+// key/value pair is already in use in the database
+//
+// In the event an account already exists, the request will return a 409 Conflict
 func (controller *AresController) GetAccountAvailability() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		key := ctx.Param("key")
@@ -66,8 +99,22 @@ func (controller *AresController) GetAccountAvailability() gin.HandlerFunc {
 	}
 }
 
+// GetAccount returns a single account matching the provided key/value
+// pair provided through parameters and in the query itself.
+//
+// key = passed as a parameter, as this function is called from within the
+// 		 router itself.
 func (controller *AresController) GetAccount(key string) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		v := ctx.Param("value")
+		re := regexp.MustCompile(`[^a-zA-Z0-9._-]+`)
+
+		match := re.MatchString(v)
+		if match {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "value must be alphanumeric"})
+			return
+		}
+
 		account, err := getAccountWithKeyValue(controller, ctx, key)
 		if err != nil {
 			if err == mongo.ErrNoDocuments {
@@ -83,6 +130,8 @@ func (controller *AresController) GetAccount(key string) gin.HandlerFunc {
 	}
 }
 
+// GetProfile returns the basic account structure and profile struct
+// attached to the provided key/value pair
 func (controller *AresController) GetProfile(key string) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		account, err := getAccountWithKeyValue(controller, ctx, key)
@@ -99,24 +148,19 @@ func (controller *AresController) GetProfile(key string) gin.HandlerFunc {
 	}
 }
 
-// /v1/account/query/:username
-
+// GetSimilarAccountsByUsername returns an array of accounts that match
+// the provided username. This request utilizes a fuzzy search algo to query
+// the results from the database
 func (controller *AresController) GetSimilarAccountsByUsername() gin.HandlerFunc {
 	type BasicAccount struct {
-		ID       string `json:"id"`
-		Username string `json:"username"`
+		ID       string        `json:"id"`
+		Username string        `json:"username"`
+		Profile  model.Profile `json:"profile"`
 	}
 
 	return func(ctx *gin.Context) {
 		username := ctx.Param("username")
-
-		filter := bson.M{"name": primitive.Regex{Pattern: username, Options: "i"}}
-		accounts, err := database.FindManyDocumentsByFilter[model.Account](database.QueryParams{
-			MongoClient:    controller.DB,
-			DatabaseName:   controller.DatabaseName,
-			CollectionName: controller.CollectionName,
-		}, filter)
-
+		accounts, err := getAccountsFuzzySearch(controller, "name", username)
 		if err != nil {
 			if err == mongo.ErrNoDocuments {
 				ctx.AbortWithStatus(http.StatusNotFound)
@@ -129,7 +173,12 @@ func (controller *AresController) GetSimilarAccountsByUsername() gin.HandlerFunc
 
 		var basicAccounts []BasicAccount
 		for _, account := range accounts {
-			basic := BasicAccount{ID: account.ID.Hex(), Username: account.Username}
+			basic := BasicAccount{
+				ID:       account.ID.Hex(),
+				Username: account.Username,
+				Profile:  account.Profile,
+			}
+
 			basicAccounts = append(basicAccounts, basic)
 		}
 
@@ -137,6 +186,50 @@ func (controller *AresController) GetSimilarAccountsByUsername() gin.HandlerFunc
 	}
 }
 
+// GetSimilarAccountsByProfileName performs a fuzzy search to find all profiles
+// that have profile names similar to the provided username.
+//
+// This function utilizes fuzzy search to return similar names
+func (controller *AresController) GetSimilarAccountsByProfileName() gin.HandlerFunc {
+	type BasicAccount struct {
+		ID       string        `json:"id"`
+		Username string        `json:"username"`
+		Profile  model.Profile `json:"profile"`
+	}
+
+	return func(ctx *gin.Context) {
+		name := ctx.Param("name")
+		accounts, err := getAccountsFuzzySearch(controller, "profile.name", name)
+		if err != nil {
+			if err == mongo.ErrNoDocuments {
+				ctx.AbortWithStatus(http.StatusNotFound)
+				return
+			}
+
+			ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "failed to perform fuzzy search: " + err.Error()})
+			return
+		}
+
+		var basicAccounts []BasicAccount
+		for _, account := range accounts {
+			basic := BasicAccount{
+				ID:       account.ID.Hex(),
+				Username: account.Username,
+				Profile:  account.Profile,
+			}
+
+			basicAccounts = append(basicAccounts, basic)
+		}
+
+		ctx.JSON(http.StatusOK, gin.H{"result": basicAccounts})
+	}
+}
+
+// CreateStandardAccount creates a new account in the system
+// using the 'standard' recipe.
+//
+// If successful an account ID will be generated by the database
+// and returned to the request maker
 func (controller *AresController) CreateStandardAccount() gin.HandlerFunc {
 	type Params struct {
 		Username string `json:"username" binding:"required"`

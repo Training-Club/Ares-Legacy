@@ -20,6 +20,7 @@ func ApplyAccountRoutes(router *gin.Engine, mongoClient *mongo.Client) {
 		v1.GET("/availability/:key/:value", ctrl.GetAccountAvailability())
 		v1.GET("/profile/id/:value", ctrl.GetProfile("id"))
 		v1.GET("/profile/username/:value", ctrl.GetProfile("username"))
+		v1.GET("/search/:username", ctrl.GetSimilarAccountsByUsername())
 
 		v1.POST("/recipe/standard", ctrl.CreateStandardAccount())
 		v1.POST("/recipe/apple")
