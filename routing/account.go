@@ -6,6 +6,29 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+/*
+	GET
+		- /id/:value - Get account by ID (DONE)
+		- /username/:value - Get account by username (DONE)
+		- /search/:username - Search for array of accounts similar to username (DONE)
+		- /search/profile/:name - Search for array of accounts similar to profile name
+
+	POST
+		- /recipe/standard
+		- /recipe/apple
+		- /recipe/google
+
+	PUT
+		- /preferences - Update preferences struct attached to request account id
+		- /lastseen - Update last seen time to current time for attached request account id
+		- /username - Update accounts username
+		- /email - Update accounts email
+		- /password - Update accounts password, starting the password change process
+
+	DELETE
+		- / - Queue the attached account to be deleted
+*/
+
 func ApplyAccountRoutes(router *gin.Engine, mongoClient *mongo.Client) {
 	ctrl := controller.AresController{
 		DB:             mongoClient,
