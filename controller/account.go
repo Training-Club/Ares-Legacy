@@ -444,3 +444,65 @@ func (controller *AresController) SetAccountLastSeen() gin.HandlerFunc {
 		ctx.Status(http.StatusOK)
 	}
 }
+
+// DeleteAccount will remove an account from the account database and
+// transfer it to the deleted collection. Along with the account itself,
+// a deleted account struct contains the time it will expire and need to
+// be removed. That date is then picked up by a utility application which
+// will clean up the database and handle the actual removal
+func (controller *AresController) DeleteAccount() gin.HandlerFunc {
+	accountDbQueryParams := database.QueryParams{
+		MongoClient:    controller.DB,
+		DatabaseName:   controller.DatabaseName,
+		CollectionName: controller.CollectionName,
+	}
+
+	return func(ctx *gin.Context) {
+		accountId := ctx.GetString("accountId")
+		account, err := database.FindDocumentById[model.Account](accountDbQueryParams, accountId)
+
+		if err != nil {
+			if err == mongo.ErrNoDocuments {
+				ctx.AbortWithStatus(http.StatusNotFound)
+				return
+			}
+
+			ctx.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+
+		deletedAccount := model.DeletedAccount{
+			Account:   account,
+			RemovalAt: time.Now().Add(time.Hour * 24 * 7 * time.Duration(4)),
+		}
+
+		deletedId, err := database.InsertOne(database.QueryParams{
+			MongoClient:    controller.DB,
+			DatabaseName:   controller.DatabaseName,
+			CollectionName: controller.CollectionName + "_deleted",
+		}, deletedAccount)
+
+		if err != nil {
+			ctx.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+
+		deleteResult, err := database.DeleteOne(accountDbQueryParams, account)
+		if err != nil {
+			if err == mongo.ErrNoDocuments {
+				ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"message": "account not found"})
+				return
+			}
+
+			ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "failed to delete account from database"})
+			return
+		}
+
+		if deleteResult.DeletedCount <= 0 {
+			ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"message": "account delete result returned as zero"})
+			return
+		}
+
+		ctx.JSON(http.StatusOK, gin.H{"deletedId": deletedId})
+	}
+}

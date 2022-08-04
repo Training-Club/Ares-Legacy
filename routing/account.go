@@ -3,6 +3,7 @@ package routing
 import (
 	"ares/controller"
 	"ares/middleware"
+
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -22,13 +23,13 @@ import (
 	PUT
 		- /preferences - Update preferences struct attached to request account id (DONE)
 			- /preferences/<notifications/privacy>/
-		- /lastseen - Update last seen time to current time for attached request account id
+		- /lastseen - Update last seen time to current time for attached request account id (DONE)
 		- /username - Update accounts username
 		- /email - Update accounts email
 		- /password - Update accounts password, starting the password change process
 
 	DELETE
-		- / - Queue the attached account to be deleted
+		- / - Queue the attached account to be deleted (DONE)
 */
 
 func ApplyAccountRoutes(router *gin.Engine, mongoClient *mongo.Client) {
@@ -61,5 +62,7 @@ func ApplyAccountRoutes(router *gin.Engine, mongoClient *mongo.Client) {
 		v1Authorized.PUT("/preferences/privacy", ctrl.UpdateAccount("privacy"))
 		v1Authorized.PUT("/preferences/profile", ctrl.UpdateAccount("profile"))
 		v1Authorized.PUT("/preferences/biometrics", ctrl.UpdateAccount("biometrics"))
+
+		v1Authorized.DELETE("/", ctrl.DeleteAccount())
 	}
 }
