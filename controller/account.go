@@ -5,14 +5,15 @@ import (
 	"ares/model"
 	"ares/util"
 	"fmt"
+	"net/http"
+	"reflect"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/crypto/bcrypt"
-	"net/http"
-	"reflect"
-	"time"
 )
 
 // Returns a single account matching key/value pair
@@ -434,7 +435,7 @@ func (controller *AresController) SetAccountLastSeen() gin.HandlerFunc {
 
 		account.LastSeen = time.Now()
 
-		updateCount, err := database.UpdateOne[model.Account](dbQueryParams, account.ID, account)
+		updateCount, err := database.UpdateOne(dbQueryParams, account.ID, account)
 		if err != nil || updateCount <= 0 {
 			ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "failed to update document"})
 			return
