@@ -5,15 +5,13 @@ import (
 	"ares/model"
 	"ares/util"
 	"fmt"
-	"net/http"
-	"reflect"
-	"regexp"
-
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/crypto/bcrypt"
+	"net/http"
+	"reflect"
 )
 
 // Returns a single account matching key/value pair
@@ -26,8 +24,7 @@ func getAccountWithKeyValue(
 	key string,
 ) (model.Account, error) {
 	v := ctx.Param("value")
-	re := regexp.MustCompile(`[^a-zA-Z0-9._-]+`)
-	match := re.MatchString(v)
+	match := util.IsAlphanumeric(v)
 
 	if match {
 		return model.Account{}, fmt.Errorf("value must be alphanumeric")
@@ -72,7 +69,18 @@ func getAccountsFuzzySearch(
 func (controller *AresController) GetAccountAvailability() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		key := ctx.Param("key")
+		alphanumeric := util.IsAlphanumeric(key)
+		if !alphanumeric {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "key must be alphanumeric"})
+			return
+		}
+
 		value := ctx.Param("value")
+		alphanumeric = util.IsAlphanumeric(value)
+		if !alphanumeric {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "value must be alphanumeric"})
+			return
+		}
 
 		if key != "username" && key != "email" {
 			ctx.AbortWithStatusJSON(400, gin.H{"message": "key field must be 'username' or 'email'"})
@@ -107,9 +115,7 @@ func (controller *AresController) GetAccountAvailability() gin.HandlerFunc {
 func (controller *AresController) GetAccount(key string) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		v := ctx.Param("value")
-		re := regexp.MustCompile(`[^a-zA-Z0-9._-]+`)
-
-		match := re.MatchString(v)
+		match := util.IsAlphanumeric(v)
 		if match {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "value must be alphanumeric"})
 			return
@@ -256,15 +262,31 @@ func (controller *AresController) CreateStandardAccount() gin.HandlerFunc {
 			return
 		}
 
-		existingEmail, _ := database.FindDocumentByKeyValue[string, model.Account](dbQueryParams, "email", params.Email)
+		sanitized := util.IsAlphanumeric(params.Username)
+		if sanitized {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "username must be alphanumeric"})
+			return
+		}
 
+		sanitized = util.IsValidEmail(params.Email)
+		if sanitized {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "email is invalid"})
+			return
+		}
+
+		validPassword := util.IsValidPassword(params.Password)
+		if validPassword {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "password is invalid"})
+			return
+		}
+
+		existingEmail, _ := database.FindDocumentByKeyValue[string, model.Account](dbQueryParams, "email", params.Email)
 		if !reflect.ValueOf(existingEmail).IsZero() {
 			ctx.AbortWithStatusJSON(http.StatusConflict, gin.H{"message": "email is in use"})
 			return
 		}
 
 		existingUsername, _ := database.FindDocumentByKeyValue[string, model.Account](dbQueryParams, "username", params.Username)
-
 		if !reflect.ValueOf(existingUsername).IsZero() {
 			ctx.AbortWithStatusJSON(http.StatusConflict, gin.H{"message": "username is in use"})
 			return
