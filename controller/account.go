@@ -328,3 +328,82 @@ func (controller *AresController) CreateStandardAccount() gin.HandlerFunc {
 		})
 	}
 }
+
+// UpdateAccount updates struct data within the account struct such as
+// profile, notifications, biometrics and privacy settings
+//
+// If successful the response will return an empty status OK 200
+func (controller *AresController) UpdateAccount(id string) gin.HandlerFunc {
+	dbQueryParams := database.QueryParams{
+		MongoClient:    controller.DB,
+		DatabaseName:   controller.DatabaseName,
+		CollectionName: controller.CollectionName,
+	}
+
+	return func(ctx *gin.Context) {
+		if id != "notifications" &&
+			id != "privacy" &&
+			id != "profile" &&
+			id != "biometrics" {
+			ctx.AbortWithStatus(http.StatusBadRequest)
+			return
+		}
+
+		accountId := ctx.GetString("accountId")
+		account, err := database.FindDocumentById[model.Account](dbQueryParams, accountId)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"message": "failed to find account attached to request account id"})
+			return
+		}
+
+		if id == "notifications" {
+			var params model.NotificationPreferences
+
+			err = ctx.ShouldBindJSON(&params)
+			if err != nil {
+				ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "failed to unmarshal notification preferences object"})
+				return
+			}
+
+			account.Preferences.Notifications = params
+		} else if id == "privacy" {
+			var params model.PrivacyPreferences
+
+			err = ctx.ShouldBindJSON(&params)
+			if err != nil {
+				ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "failed to unmarshal privacy preferences object"})
+				return
+			}
+
+			account.Preferences.Privacy = params
+		} else if id == "profile" {
+			var params model.Profile
+
+			err = ctx.ShouldBindJSON(&params)
+			if err != nil {
+				ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "failed to unmarshal profile object"})
+				return
+			}
+
+			account.Profile = params
+		} else if id == "biometrics" {
+			var params model.Biometrics
+
+			err = ctx.ShouldBindJSON(&params)
+			if err != nil {
+				ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "failed to unmarshal biometrics object"})
+				return
+			}
+
+			account.Biometrics = params
+		}
+
+		updated, err := database.UpdateOne(dbQueryParams, account.ID, account)
+		if updated <= 0 {
+			ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "updated document count returned as zero"})
+			return
+		}
+
+		ctx.Status(http.StatusOK)
+	}
+}
