@@ -12,15 +12,15 @@ import (
 		- /id/:value - Get account by ID (DONE)
 		- /username/:value - Get account by username (DONE)
 		- /search/:username - Search for array of accounts similar to username (DONE)
-		- /search/profile/:name - Search for array of accounts similar to profile name
+		- /search/profile/:name - Search for array of accounts similar to profile name (DONE)
 
 	POST
-		- /recipe/standard
+		- /recipe/standard (DONE)
 		- /recipe/apple
 		- /recipe/google
 
 	PUT
-		- /preferences - Update preferences struct attached to request account id
+		- /preferences - Update preferences struct attached to request account id (DONE)
 			- /preferences/<notifications/privacy>/
 		- /lastseen - Update last seen time to current time for attached request account id
 		- /username - Update accounts username
@@ -56,6 +56,7 @@ func ApplyAccountRoutes(router *gin.Engine, mongoClient *mongo.Client) {
 		v1Authorized.GET("/profile/id/:value", ctrl.GetProfile("id"))
 		v1Authorized.GET("/profile/username/:value", ctrl.GetProfile("username"))
 
+		v1Authorized.PUT("/lastseen", ctrl.SetAccountLastSeen())
 		v1Authorized.PUT("/preferences/notifications", ctrl.UpdateAccount("notifications"))
 		v1Authorized.PUT("/preferences/privacy", ctrl.UpdateAccount("privacy"))
 		v1Authorized.PUT("/preferences/profile", ctrl.UpdateAccount("profile"))

@@ -12,6 +12,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"net/http"
 	"reflect"
+	"time"
 )
 
 // Returns a single account matching key/value pair
@@ -401,6 +402,41 @@ func (controller *AresController) UpdateAccount(id string) gin.HandlerFunc {
 		updated, err := database.UpdateOne(dbQueryParams, account.ID, account)
 		if updated <= 0 {
 			ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "updated document count returned as zero"})
+			return
+		}
+
+		ctx.Status(http.StatusOK)
+	}
+}
+
+// SetAccountLastSeen sets the account last seen attached
+// to the request headers to the current time on the server
+func (controller *AresController) SetAccountLastSeen() gin.HandlerFunc {
+	dbQueryParams := database.QueryParams{
+		MongoClient:    controller.DB,
+		DatabaseName:   controller.DatabaseName,
+		CollectionName: controller.CollectionName,
+	}
+
+	return func(ctx *gin.Context) {
+		accountId := ctx.GetString("accountId")
+		account, err := database.FindDocumentById[model.Account](dbQueryParams, accountId)
+
+		if err != nil {
+			if err == mongo.ErrNoDocuments {
+				ctx.AbortWithStatus(http.StatusNotFound)
+				return
+			}
+
+			ctx.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+
+		account.LastSeen = time.Now()
+
+		updateCount, err := database.UpdateOne[model.Account](dbQueryParams, account.ID, account)
+		if err != nil || updateCount <= 0 {
+			ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "failed to update document"})
 			return
 		}
 
