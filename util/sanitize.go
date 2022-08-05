@@ -22,3 +22,10 @@ func IsValidEmail(s string) bool {
 	re := regexp.MustCompile(`!/(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}])|(([a-zA-Z\-\d]+\.)+[a-zA-Z]{2,}))/`)
 	return re.MatchString(s)
 }
+
+// IsValidWord returns a bool if the provided string
+// matches a valid a-z A-Z format
+func IsValidWord(s string) bool {
+	re := regexp.MustCompile(`[^a-zA-Z]+`)
+	return re.MatchString(s)
+}
