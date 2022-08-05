@@ -2,12 +2,13 @@ package database
 
 import (
 	"context"
+	"strings"
+	"time"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"strings"
-	"time"
 )
 
 type QueryParams struct {
@@ -81,7 +82,7 @@ func FindManyDocumentsByKeyValue[K any, V any](params QueryParams, key string, v
 	return documents, traverseErr
 }
 
-func FindManyDocumentsByFilter[K any](params QueryParams, filter bson.M) ([]K, error) {
+func FindManyDocumentsByFilter[K any](params QueryParams, filter interface{}) ([]K, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	collection := params.MongoClient.Database(params.DatabaseName).Collection(params.CollectionName)
 
@@ -99,7 +100,7 @@ func FindManyDocumentsByFilter[K any](params QueryParams, filter bson.M) ([]K, e
 	return documents, traverseErr
 }
 
-func FindManyDocumentsByFilterWithOpts[K any](params QueryParams, filter bson.M, opts *options.FindOptions) ([]K, error) {
+func FindManyDocumentsByFilterWithOpts[K any](params QueryParams, filter interface{}, opts *options.FindOptions) ([]K, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	collection := params.MongoClient.Database(params.DatabaseName).Collection(params.CollectionName)
 
@@ -156,7 +157,7 @@ func DeleteOne[K any](params QueryParams, document K) (*mongo.DeleteResult, erro
 	return result, err
 }
 
-func Count(params QueryParams, filter bson.M) (int64, error) {
+func Count(params QueryParams, filter interface{}) (int64, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	collection := params.MongoClient.Database(params.DatabaseName).Collection(params.CollectionName)
 
