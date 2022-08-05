@@ -20,8 +20,8 @@ func ApplyExerciseInfoRoutes(router *gin.Engine, mongoClient *mongo.Client) {
 	{
 		v1Authorized.GET("/id/:value", ctrl.GetExerciseInfoByKeyValue("id"))
 		v1Authorized.GET("/name/:value", ctrl.GetExerciseInfoByKeyValue("name"))
-		v1Authorized.GET("/query/:value")
+		v1Authorized.GET("/query", ctrl.QueryExerciseInfo())
 
-		v1Authorized.POST("/")
+		v1Authorized.POST("/", ctrl.CreateExerciseInfo())
 	}
 }

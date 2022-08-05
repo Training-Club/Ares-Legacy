@@ -3,8 +3,10 @@ package controller
 import (
 	"ares/database"
 	"ares/model"
+	"fmt"
 	"net/http"
 	"reflect"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
@@ -70,18 +72,19 @@ func (controller *AresController) QueryExerciseInfo() gin.HandlerFunc {
 			return
 		}
 
-		filter := bson.A{}
+		filter := bson.M{}
 
 		if namePresent {
-			filter = append(filter, bson.D{{Key: "name", Value: primitive.Regex{Pattern: name, Options: "i"}}})
+			filter["name"] = primitive.Regex{Pattern: name, Options: "i"}
 		}
 
 		if muscleGroupsPresent {
-			filter = append(filter, bson.M{"muscleGroups": bson.M{"$in": muscleGroups}})
+			filter["muscleGroups"] = bson.M{"$in": muscleGroups}
+			fmt.Printf(strings.Join(muscleGroups, " & "))
 		}
 
 		if equipmentPresent {
-			filter = append(filter, bson.M{"equipment": equipment})
+			filter["equipment"] = equipment
 		}
 
 		result, err := database.FindManyDocumentsByFilterWithOpts[model.ExerciseInfo](database.QueryParams{
@@ -96,7 +99,12 @@ func (controller *AresController) QueryExerciseInfo() gin.HandlerFunc {
 				return
 			}
 
-			ctx.AbortWithStatus(http.StatusInternalServerError)
+			ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "failed to perform database query: " + err.Error()})
+			return
+		}
+
+		if !reflect.ValueError(result).IsZero() {
+
 		}
 
 		ctx.JSON(http.StatusOK, gin.H{"result": result})

@@ -7,4 +7,5 @@ import (
 
 func ApplyRoutes(engine *gin.Engine, mongoClient *mongo.Client) {
 	ApplyAccountRoutes(engine, mongoClient)
+	ApplyExerciseInfoRoutes(engine, mongoClient)
 }
