@@ -3,15 +3,15 @@ package model
 type MeasurementSystem string
 
 const (
-	IMPERIAL MeasurementSystem = "imperial"
-	METRIC   MeasurementSystem = "metric"
+	IMPERIAL MeasurementSystem = "IMPERIAL"
+	METRIC   MeasurementSystem = "METRIC"
 )
 
 type DistanceMeasurement string
 
 const (
-	METER     DistanceMeasurement = "meter"
-	MILE      DistanceMeasurement = "mile"
-	FEET      DistanceMeasurement = "feet"
-	KILOMETER DistanceMeasurement = "kilometer"
+	METER     DistanceMeasurement = "METER"
+	MILE      DistanceMeasurement = "MILE"
+	FEET      DistanceMeasurement = "FEET"
+	KILOMETER DistanceMeasurement = "KILOMETER"
 )

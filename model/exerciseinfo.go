@@ -15,22 +15,19 @@ type ExerciseEquipment string
 type MuscleGroup string
 
 const (
-	BARBELL    ExerciseEquipment = "barbell"
-	DUMBBELL   ExerciseEquipment = "dumbbell"
-	MACHINE    ExerciseEquipment = "machine"
-	KETTLEBELL ExerciseEquipment = "kettlebell"
+	BARBELL    ExerciseEquipment = "BARBELL"
+	DUMBBELL   ExerciseEquipment = "DUMBBELL"
+	MACHINE    ExerciseEquipment = "MACHINE"
+	KETTLEBELL ExerciseEquipment = "KETTLEBELL"
 )
 
 const (
-	CALVES     MuscleGroup = "calves"
-	HAMSTRING  MuscleGroup = "hamstring"
-	QUADS      MuscleGroup = "quads"
-	GLUTES     MuscleGroup = "glutes"
-	BICEPS     MuscleGroup = "biceps"
-	TRICEPS    MuscleGroup = "triceps"
-	TRAPS      MuscleGroup = "traps"
-	UPPER_BACK MuscleGroup = "upperBack"
-	LOWER_BACK MuscleGroup = "lowerBack"
-	CHEST      MuscleGroup = "chest"
-	ABS        MuscleGroup = "abs"
+	NECK       MuscleGroup = "NECK"
+	SHOULDERS  MuscleGroup = "SHOULDERS"
+	UPPER_ARMS MuscleGroup = "UPPER_ARMS"
+	FOREARMS   MuscleGroup = "FOREARMS"
+	BACK       MuscleGroup = "BACK"
+	CHEST      MuscleGroup = "CHEST"
+	THIGHS     MuscleGroup = "THIGHS"
+	CALVES     MuscleGroup = "CALVES"
 )
