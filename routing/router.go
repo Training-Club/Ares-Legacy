@@ -6,6 +6,7 @@ import (
 )
 
 func ApplyRoutes(engine *gin.Engine, mongoClient *mongo.Client) {
+	ApplyHealthCheckRoutes(engine, mongoClient)
 	ApplyAccountRoutes(engine, mongoClient)
 	ApplyExerciseInfoRoutes(engine, mongoClient)
 }
