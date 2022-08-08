@@ -58,22 +58,22 @@ type AdditionalExerciseType string
 type SessionStatus string
 
 const (
-	WEIGHTED_REPS ExerciseType = "weighted_reps"
-	WEIGHTED_TIME ExerciseType = "weighted_time"
-	DISTANCE_TIME ExerciseType = "distance_time"
-	REPS          ExerciseType = "reps"
-	TIME          ExerciseType = "time"
-	DISTANCE                   = "distance"
+	WEIGHTED_REPS ExerciseType = "WEIGHTED_REPS"
+	WEIGHTED_TIME ExerciseType = "WEIGHTED_TIME"
+	DISTANCE_TIME ExerciseType = "DISTANCE_TIME"
+	REPS          ExerciseType = "REPS"
+	TIME          ExerciseType = "TIME"
+	DISTANCE                   = "DISTANCE"
 )
 
 const (
-	SUPERSET AdditionalExerciseType = "superset"
-	DROPSET  AdditionalExerciseType = "dropset"
+	SUPERSET AdditionalExerciseType = "SUPERSET"
+	DROPSET  AdditionalExerciseType = "DROPSET"
 )
 
 const (
-	DRAFT       SessionStatus = "draft"
-	IN_PROGRESS SessionStatus = "in_progress"
-	ASSIGNED                  = "assigned"
-	COMPLETED                 = "completed"
+	DRAFT       SessionStatus = "DRAFT"
+	IN_PROGRESS SessionStatus = "IN_PROGRESS"
+	ASSIGNED                  = "ASSIGNED"
+	COMPLETED                 = "COMPLETED"
 )
