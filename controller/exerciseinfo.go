@@ -3,10 +3,8 @@ package controller
 import (
 	"ares/database"
 	"ares/model"
-	"fmt"
 	"net/http"
 	"reflect"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
@@ -80,7 +78,6 @@ func (controller *AresController) QueryExerciseInfo() gin.HandlerFunc {
 
 		if muscleGroupsPresent {
 			filter["muscleGroups"] = bson.M{"$in": muscleGroups}
-			fmt.Printf(strings.Join(muscleGroups, " & "))
 		}
 
 		if equipmentPresent {
