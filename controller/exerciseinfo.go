@@ -30,7 +30,7 @@ func (controller *AresController) GetExerciseInfoByKeyValue(key string) gin.Hand
 			return
 		}
 
-		value := ctx.GetString("value")
+		value := ctx.Param("value")
 
 		var info model.ExerciseInfo
 		var err error
@@ -59,7 +59,7 @@ func (controller *AresController) GetExerciseInfoByKeyValue(key string) gin.Hand
 // a lookup in the exercise info database for exercises that match the given
 // criteria
 //
-// If no documents are found the reponse will be a 404, otherwise a successful 200 with
+// If no documents are found the response will be a 404, otherwise a successful 200 with
 // an array of items under the "result" key
 func (controller *AresController) QueryExerciseInfo() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
@@ -103,8 +103,9 @@ func (controller *AresController) QueryExerciseInfo() gin.HandlerFunc {
 			return
 		}
 
-		if !reflect.ValueError(result).IsZero() {
-
+		if reflect.ValueOf(result).IsZero() {
+			ctx.AbortWithStatus(http.StatusNotFound)
+			return
 		}
 
 		ctx.JSON(http.StatusOK, gin.H{"result": result})
