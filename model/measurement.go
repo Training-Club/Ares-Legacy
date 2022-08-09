@@ -15,3 +15,14 @@ const (
 	FEET      DistanceMeasurement = "FEET"
 	KILOMETER DistanceMeasurement = "KILOMETER"
 )
+
+type FoodMeasurement string
+
+const (
+	OUNCE    string = "OUNCE"
+	GRAM     string = "GRAM"
+	POUND    string = "POUND"
+	KILOGRAM string = "KILOGRAM"
+	CUP      string = "CUP"
+	SERVING  string = "SERVING"
+)
