@@ -471,6 +471,7 @@ func (controller *AresController) DeleteAccount() gin.HandlerFunc {
 			return
 		}
 
+		// TODO: Make removalAt customizable
 		deletedAccount := model.DeletedAccount{
 			Account:   account,
 			RemovalAt: time.Now().Add(time.Hour * 24 * 7 * time.Duration(4)),
