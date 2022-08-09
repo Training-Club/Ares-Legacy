@@ -48,6 +48,6 @@ func ApplyExerciseRoutes(router *gin.Engine, mongoClient *mongo.Client) {
 
 		v1Authorized.PUT("/", ctrl.UpdateExerciseSession())
 
-		v1Authorized.DELETE("/", ctrl.DeleteExerciseSession())
+		v1Authorized.DELETE("/:sessionId", ctrl.DeleteExerciseSession())
 	}
 }
