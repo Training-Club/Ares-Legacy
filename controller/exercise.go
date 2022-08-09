@@ -148,14 +148,6 @@ func (controller *AresController) CreateExerciseSession() gin.HandlerFunc {
 			return
 		}
 
-		// we only need to check session name since json marshaling
-		// handles all the typed objects on the struct
-		match := util.IsAlphanumeric(params.SessionName)
-		if match {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "session name must be alphanumeric"})
-			return
-		}
-
 		session := model.Session{
 			SessionName: params.SessionName,
 			Author:      params.Author,
