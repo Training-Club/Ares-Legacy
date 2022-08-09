@@ -22,6 +22,7 @@ func GetMongoClient(uri string) (*mongo.Client, error) {
 	return mongo.Connect(context.Background(), options.Client().ApplyURI(uri))
 }
 
+// FindDocumentById queries a single document in the database by document ID
 func FindDocumentById[K any](params QueryParams, id string) (K, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	collection := params.MongoClient.Database(params.DatabaseName).Collection(params.CollectionName)
@@ -40,6 +41,8 @@ func FindDocumentById[K any](params QueryParams, id string) (K, error) {
 	return document, findErr
 }
 
+// FindDocumentByKeyValue queries a single doucment in the database by a K/V filter
+// Key must be a string, and value can be any filter object
 func FindDocumentByKeyValue[K any, V any](params QueryParams, key string, value K) (V, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	collection := params.MongoClient.Database(params.DatabaseName).Collection(params.CollectionName)
@@ -52,6 +55,7 @@ func FindDocumentByKeyValue[K any, V any](params QueryParams, key string, value 
 	return document, findErr
 }
 
+// FindDocumentByFilter queries a single document in the daatabase using a BSON filter
 func FindDocumentByFilter[K any](params QueryParams, filter bson.M) (K, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	collection := params.MongoClient.Database(params.DatabaseName).Collection(params.CollectionName)
@@ -64,6 +68,7 @@ func FindDocumentByFilter[K any](params QueryParams, filter bson.M) (K, error) {
 	return document, findErr
 }
 
+// FindManyDocumentsByKeyValue queries an array of documents by a K/V filter
 func FindManyDocumentsByKeyValue[K any, V any](params QueryParams, key string, value K) ([]V, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	collection := params.MongoClient.Database(params.DatabaseName).Collection(params.CollectionName)
@@ -82,6 +87,7 @@ func FindManyDocumentsByKeyValue[K any, V any](params QueryParams, key string, v
 	return documents, traverseErr
 }
 
+// FindManyDocumentsByFilter queries an array of documents by a BSON filter
 func FindManyDocumentsByFilter[K any](params QueryParams, filter interface{}) ([]K, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	collection := params.MongoClient.Database(params.DatabaseName).Collection(params.CollectionName)
@@ -100,6 +106,8 @@ func FindManyDocumentsByFilter[K any](params QueryParams, filter interface{}) ([
 	return documents, traverseErr
 }
 
+// FindManyDocumentsByFilterWithOpts queries an array of documents by a
+// BSON filter with optional Find object options
 func FindManyDocumentsByFilterWithOpts[K any](params QueryParams, filter interface{}, opts *options.FindOptions) ([]K, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	collection := params.MongoClient.Database(params.DatabaseName).Collection(params.CollectionName)
@@ -118,6 +126,7 @@ func FindManyDocumentsByFilterWithOpts[K any](params QueryParams, filter interfa
 	return documents, traverseErr
 }
 
+// InsertOne adds a single document to the database
 func InsertOne[K any](params QueryParams, document K) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	collection := params.MongoClient.Database(params.DatabaseName).Collection(params.CollectionName)
@@ -135,6 +144,7 @@ func InsertOne[K any](params QueryParams, document K) (string, error) {
 	return id, err
 }
 
+// UpdateOne updates a single document in the database
 func UpdateOne[K any](params QueryParams, id primitive.ObjectID, document K) (int64, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	collection := params.MongoClient.Database(params.DatabaseName).Collection(params.CollectionName)
@@ -146,6 +156,7 @@ func UpdateOne[K any](params QueryParams, id primitive.ObjectID, document K) (in
 	return result.ModifiedCount, err
 }
 
+// DeleteOne removes a single document from the database
 func DeleteOne[K any](params QueryParams, document K) (*mongo.DeleteResult, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	collection := params.MongoClient.Database(params.DatabaseName).Collection(params.CollectionName)
@@ -157,6 +168,7 @@ func DeleteOne[K any](params QueryParams, document K) (*mongo.DeleteResult, erro
 	return result, err
 }
 
+// Count returns a number of documents matching the provided BSON filter
 func Count(params QueryParams, filter interface{}) (int64, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	collection := params.MongoClient.Database(params.DatabaseName).Collection(params.CollectionName)
