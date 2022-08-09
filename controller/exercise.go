@@ -64,6 +64,12 @@ func (controller *AresController) GetExerciseSessionByQuery() gin.HandlerFunc {
 		filter := bson.M{}
 
 		if sessionNamePresent {
+			match := util.IsAlphanumeric(sessionName)
+			if match {
+				ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "session name must be alphanumeric"})
+				return
+			}
+
 			filter["sessionName"] = primitive.Regex{Pattern: sessionName, Options: "i"}
 		}
 
@@ -78,6 +84,12 @@ func (controller *AresController) GetExerciseSessionByQuery() gin.HandlerFunc {
 		}
 
 		if exerciseNamePresent {
+			match := util.IsAlphanumeric(exerciseName)
+			if match {
+				ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "exercise name must be alphanumeric"})
+				return
+			}
+
 			filter["exercises"] = bson.M{"$elemMatch": exerciseName}
 		}
 
