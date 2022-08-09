@@ -11,7 +11,7 @@ func ParseToken(tokenString string) (primitive.ObjectID, error) {
 	var objectId primitive.ObjectID
 
 	conf := config.Get()
-	secret := []byte(conf.Security.JWT)
+	secret := []byte(conf.Auth.JWT)
 
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -36,7 +36,7 @@ func ParseToken(tokenString string) (primitive.ObjectID, error) {
 
 func GenerateToken(accountId string) (string, error) {
 	conf := config.Get()
-	secret := []byte(conf.Security.JWT)
+	secret := []byte(conf.Auth.JWT)
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"accountId": accountId,

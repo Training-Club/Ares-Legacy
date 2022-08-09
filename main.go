@@ -14,6 +14,10 @@ func main() {
 		panic("failed to establish mongo client instance: " + err.Error())
 	}
 
+	if conf.Gin.Mode == "release" {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
 	router := gin.New()
 	router.Use(gin.Recovery())
 	router.Use(gin.Logger())

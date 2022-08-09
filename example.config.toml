@@ -1,3 +1,6 @@
+[gin]
+mode = "release"
+
 [auth]
 jwt = "trainingclub123456789"
 

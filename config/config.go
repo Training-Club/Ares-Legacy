@@ -7,12 +7,17 @@ import (
 )
 
 type Configuration struct {
-	Security Security `toml:"security"`
-	Mongo    Mongo    `toml:"mongo"`
-	S3       S3       `toml:"s3"`
+	Gin   Gin   `toml:"gin"`
+	Auth  Auth  `toml:"auth"`
+	Mongo Mongo `toml:"mongo"`
+	S3    S3    `toml:"s3"`
 }
 
-type Security struct {
+type Gin struct {
+	Mode string `toml:"mode"`
+}
+
+type Auth struct {
 	JWT string `toml:"jwt"`
 }
 

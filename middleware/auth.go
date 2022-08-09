@@ -10,7 +10,7 @@ import (
 
 func ValidateToken(encodedToken string) (*jwt.Token, error) {
 	conf := config.Get()
-	secret := conf.Security.JWT
+	secret := conf.Auth.JWT
 
 	return jwt.Parse(encodedToken, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
