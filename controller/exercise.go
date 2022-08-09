@@ -17,7 +17,7 @@ import (
 )
 
 // GetExerciseSessionByID retrieves a single exercise session document
-// matching the provided doucment ID
+// matching the provided document ID
 func (controller *AresController) GetExerciseSessionByID() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		id := ctx.Param("value")
@@ -126,9 +126,56 @@ func (controller *AresController) GetExerciseSessionByQuery() gin.HandlerFunc {
 	}
 }
 
+// CreateExerciseSession marshals request params and attempts to create a new
+// training session in the database.
+//
+// If successful, resulting session document ID will be returned in a
+// status 200 OK response
 func (controller *AresController) CreateExerciseSession() gin.HandlerFunc {
-	return func(ctx *gin.Context) {
+	type Params struct {
+		SessionName string              `json:"sessionName" binding:"required"`
+		Author      primitive.ObjectID  `json:"author" binding:"required"`
+		Status      model.SessionStatus `json:"status" binding:"required"`
+		Timestamp   time.Time           `json:"timestamp,omitempty"`
+		Exercises   []model.Exercise    `json:"exercises,omitempty" binding:"required"`
+	}
 
+	return func(ctx *gin.Context) {
+		var params Params
+		err := ctx.ShouldBindJSON(&params)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "failed to unmarshal params: " + err.Error()})
+			return
+		}
+
+		// we only need to check session name since json marshaling
+		// handles all the typed objects on the struct
+		match := util.IsAlphanumeric(params.SessionName)
+		if match {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "session name must be alphanumeric"})
+			return
+		}
+
+		session := model.Session{
+			SessionName: params.SessionName,
+			Author:      params.Author,
+			Status:      params.Status,
+			Timestamp:   params.Timestamp,
+			Exercises:   params.Exercises,
+		}
+
+		inserted, err := database.InsertOne[model.Session](database.QueryParams{
+			MongoClient:    controller.DB,
+			DatabaseName:   controller.DatabaseName,
+			CollectionName: controller.CollectionName,
+		}, session)
+
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "failed to insert document"})
+			return
+		}
+
+		ctx.JSON(http.StatusOK, gin.H{"message": inserted})
 	}
 }
 
@@ -138,8 +185,77 @@ func (controller *AresController) UpdateExerciseSession() gin.HandlerFunc {
 	}
 }
 
+// DeleteExerciseSession accepts a session id as a query param and
+// attempts to queue the document for deletion in the database
+//
+// If successful, the document will be moved to a _deleted version of
+// the collection and return a status 200 OK with the ID of the deleted document
 func (controller *AresController) DeleteExerciseSession() gin.HandlerFunc {
-	return func(ctx *gin.Context) {
+	trainingDbQueryParams := database.QueryParams{
+		MongoClient:    controller.DB,
+		DatabaseName:   controller.DatabaseName,
+		CollectionName: controller.CollectionName,
+	}
 
+	return func(ctx *gin.Context) {
+		accountId := ctx.GetString("accountId")
+		sessionId := ctx.Param("sessionId")
+
+		match := util.IsAlphanumeric(sessionId)
+		if match {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "session id must be alphanumeric"})
+			return
+		}
+
+		session, err := database.FindDocumentById[model.Session](trainingDbQueryParams, sessionId)
+		if err != nil {
+			if err == mongo.ErrNoDocuments {
+				ctx.AbortWithStatus(http.StatusNotFound)
+				return
+			}
+
+			ctx.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+
+		if session.Author.Hex() != accountId {
+			ctx.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+
+		// TODO: Make removalAt customizable
+		deletedSession := model.DeletedSession{
+			Session:   session,
+			RemovalAt: time.Now().Add(time.Hour * 24 * 7 * time.Duration(4)),
+		}
+
+		deletedId, err := database.InsertOne(database.QueryParams{
+			MongoClient:    controller.DB,
+			DatabaseName:   controller.DatabaseName,
+			CollectionName: controller.CollectionName + "_deleted",
+		}, deletedSession)
+
+		if err != nil {
+			ctx.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+
+		deleteResult, err := database.DeleteOne(trainingDbQueryParams, session)
+		if err != nil {
+			if err == mongo.ErrNoDocuments {
+				ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"message": "session not found"})
+				return
+			}
+
+			ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "failed to delete document: " + err.Error()})
+			return
+		}
+
+		if deleteResult.DeletedCount <= 0 {
+			ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"message": "session delete count is zero"})
+			return
+		}
+
+		ctx.JSON(http.StatusOK, gin.H{"deletedId": deletedId})
 	}
 }
