@@ -6,16 +6,19 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+// DietEntry is the actual database entry stored in the collection
 type DietEntry struct {
 	ID      primitive.ObjectID `json:"id" bson:"_id"`
 	AddedAt time.Time          `json:"addedAt" bson:"addedAt" binding:"required"`
 	Food    Food               `json:"food" bson:"food" binding:"required"`
 }
 
+// Food is both stored in the database as its own entry, but also applied to
+// DietEntry documents
 type Food struct {
 	ID            primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
 	Name          string             `json:"name" bson:"name" binding:"required"`
-	Measurement   FoodMeasurement    `json:"measurement" bson:"measurement" binding:"required"`
+	Measurement   FoodMeasureable    `json:"measurement" bson:"measurement" binding:"required"`
 	Calories      uint16             `json:"calories,omitempty" bson:"calories,omitempty"`
 	Protein       uint16             `json:"protein,omitempty" bson:"calories,omitempty"`
 	Carbohydrates uint16             `json:"carbohydrates,omitempty" bson:"carbohydrates,omitempty"`
@@ -31,6 +34,18 @@ type Food struct {
 	Iron          uint16             `json:"iron,omitempty" bson:"iron,omitempty"`
 }
 
+// FoodMeasurement is a nested-document stored within the Food struct which tracks the measurement
+// system being applied and the size of the measurement. By default, a food entry should start with a measurement
+// and a size of 1
+//
+// e.g 1 cup, 1oz, etc.
+type FoodMeasureable struct {
+	Measurement FoodMeasurement `json:"foodMeasurement" bson:"foodMeasurement" binding:"required"`
+	Size        uint16          `json:"foodMeasurementSize" bson:"foodMeasurementSize" binding:"required"`
+}
+
+// DietWindow is a 'grouped' visualization object used to make it easier for the client to render
+// data when the user is looking at a diet screen
 type DietWindow struct {
 	Date       time.Time   `json:"date"`
 	Hour       uint8       `json:"hour"`
