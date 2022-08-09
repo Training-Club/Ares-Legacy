@@ -15,6 +15,7 @@ type Configuration struct {
 
 type Gin struct {
 	Mode string `toml:"mode"`
+	Port string `toml:"port"`
 }
 
 type Auth struct {

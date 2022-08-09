@@ -1,5 +1,6 @@
 [gin]
 mode = "release"
+port = "8080"
 
 [auth]
 jwt = "trainingclub123456789"

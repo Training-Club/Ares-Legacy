@@ -24,7 +24,7 @@ func main() {
 
 	routing.ApplyRoutes(router, mongoClient)
 
-	err = router.Run(":8080")
+	err = router.Run(":" + conf.Gin.Port)
 	if err != nil {
 		panic("failed to start gin engine: " + err.Error())
 	}
