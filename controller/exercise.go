@@ -90,12 +90,12 @@ func (controller *AresController) GetExerciseSessionByQuery() gin.HandlerFunc {
 				return
 			}
 
-			filter["exercises"] = bson.M{"$elemMatch": exerciseName}
+			filter["exercises"] = bson.M{"$in": exerciseName}
 		}
 
-		pageNumber, err := strconv.ParseUint(page, 64, 64)
+		pageNumber, err := strconv.Atoi(page)
 		if err != nil {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "bad page number"})
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "failed to retrieve page number: " + err.Error()})
 			return
 		}
 
