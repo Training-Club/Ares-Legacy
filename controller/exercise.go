@@ -156,7 +156,7 @@ func (controller *AresController) CreateExerciseSession() gin.HandlerFunc {
 			Exercises:   params.Exercises,
 		}
 
-		inserted, err := database.InsertOne[model.Session](database.QueryParams{
+		inserted, err := database.InsertOne(database.QueryParams{
 			MongoClient:    controller.DB,
 			DatabaseName:   controller.DatabaseName,
 			CollectionName: controller.CollectionName,
