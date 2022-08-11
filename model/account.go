@@ -46,7 +46,12 @@ type PrivacyPreferences struct {
 	CommentPrivacy PrivacyLevel `json:"commentPrivacy,omitempty" bson:"commentPrivacy,omitempty"`
 }
 
+type AccountPreferences struct {
+	FollowRequestEnabled bool `json:"followRequestEnabled,omitempty" bson:"followRequestEnabled,omitempty"`
+}
+
 type Preferences struct {
+	Account       AccountPreferences      `json:"accountPreferences,omitempty" bson:"accountPreferences,omitempty"`
 	Privacy       PrivacyPreferences      `json:"privacyPreferences,omitempty" bson:"privacyPreferences,omitempty"`
 	Notifications NotificationPreferences `json:"notificationPreferences,omitempty" bson:"notificationPreferences,omitempty"`
 }
