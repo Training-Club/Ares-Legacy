@@ -142,10 +142,29 @@ func (controller *AresController) GetAccount(key string) gin.HandlerFunc {
 // attached to the provided key/value pair
 func (controller *AresController) GetProfile(key string) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		requestAccountId := ctx.GetString("accountId")
 		account, err := getAccountWithKeyValue(controller, ctx, key)
-		if err != nil || account.Preferences.Privacy.ProfilePrivacy == model.PRIVATE {
+		if err != nil {
 			ctx.AbortWithStatus(http.StatusNotFound)
 			return
+		}
+
+		reqAccountId, err := primitive.ObjectIDFromHex(requestAccountId)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "request account id was invalid"})
+			return
+		}
+
+		if reqAccountId != account.ID {
+			// TODO: Perform blocked user check
+
+			if account.Preferences.Privacy.ProfilePrivacy == model.FOLLOWER_ONLY {
+				// TODO: Check if user follows another user
+				// If the provided ids do not follow each other disallow
+			} else if account.Preferences.Privacy.ProfilePrivacy == model.PRIVATE {
+				ctx.AbortWithStatus(http.StatusNotFound)
+				return
+			}
 		}
 
 		ctx.JSON(http.StatusOK, gin.H{
