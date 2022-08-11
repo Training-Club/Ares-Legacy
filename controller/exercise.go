@@ -53,10 +53,10 @@ func (controller *AresController) GetExerciseSessionByQuery() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		sessionName, sessionNamePresent := ctx.GetQuery("name")
 		before, beforePresent := ctx.GetQuery("before")
-		exerciseName, exerciseNamePresent := ctx.GetQuery("exercise")
+		exerciseNames, exerciseNamesPresent := ctx.GetQueryArray("exercise")
 		page := ctx.DefaultQuery("page", "0")
 
-		if !sessionNamePresent && !beforePresent && !exerciseNamePresent {
+		if !sessionNamePresent && !beforePresent && !exerciseNamesPresent {
 			ctx.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
@@ -74,23 +74,25 @@ func (controller *AresController) GetExerciseSessionByQuery() gin.HandlerFunc {
 		}
 
 		if beforePresent {
-			beforeTime, err := time.Parse(before, "DD-MM-YYYY")
+			beforeTime, err := time.Parse("01-02-2006", before)
 			if err != nil {
-				ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "invalid before time/date"})
+				ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "invalid before time/date: " + err.Error()})
 				return
 			}
 
 			filter["createdAt"] = bson.M{"$gte": beforeTime}
 		}
 
-		if exerciseNamePresent {
-			match := util.IsAlphanumeric(exerciseName)
-			if match {
-				ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "exercise name must be alphanumeric"})
-				return
+		if exerciseNamesPresent {
+			for _, exerciseName := range exerciseNames {
+				match := util.IsAlphanumeric(exerciseName)
+				if match {
+					ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "exercise name must be alphanumeric"})
+					return
+				}
 			}
 
-			filter["exercises"] = bson.M{"$in": exerciseName}
+			filter["exercises.exerciseName"] = bson.M{"$in": exerciseNames}
 		}
 
 		pageNumber, err := strconv.Atoi(page)
@@ -101,7 +103,7 @@ func (controller *AresController) GetExerciseSessionByQuery() gin.HandlerFunc {
 
 		skip := int64(pageNumber * 25)
 
-		result, err := database.FindManyDocumentsByFilterWithOpts[model.Exercise](database.QueryParams{
+		result, err := database.FindManyDocumentsByFilterWithOpts[model.Session](database.QueryParams{
 			MongoClient:    controller.DB,
 			DatabaseName:   controller.DatabaseName,
 			CollectionName: controller.CollectionName,
