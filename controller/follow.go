@@ -90,7 +90,7 @@ func (controller *AresController) GetConnectionCount(key string) gin.HandlerFunc
 			return
 		}
 
-		count, err := database.Count[model.Follow](database.QueryParams{
+		count, err := database.Count(database.QueryParams{
 			MongoClient:    controller.DB,
 			DatabaseName:   controller.DatabaseName,
 			CollectionName: controller.CollectionName,
