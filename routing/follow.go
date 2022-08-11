@@ -35,8 +35,8 @@ func ApplyFollowRoutes(router *gin.Engine, mongoClient *mongo.Client) {
 		v1Authorized.GET("/mutual/followers/:id", ctrl.GetMutualConnections("followers"))
 		v1Authorized.GET("/mutual/following/:id", ctrl.GetMutualConnections("following"))
 
-		v1Authorized.POST("/", ctrl.StartFollowing())
+		v1Authorized.POST("/follow/:followedId", ctrl.StartFollowing())
 
-		v1Authorized.DELETE("/", ctrl.StopFollowing())
+		v1Authorized.DELETE("/unfollow/:followedId", ctrl.StopFollowing())
 	}
 }

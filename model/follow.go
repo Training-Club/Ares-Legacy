@@ -6,11 +6,11 @@ import (
 )
 
 type Follow struct {
-	ID         primitive.ObjectID `json:"id" bson:"_id"`
-	FollowerID primitive.ObjectID `json:"followerId" bson:"followerId" binding:"required"`
-	FollowedID primitive.ObjectID `json:"followedId" bson:"followedId" binding:"required"`
-	FollowedAt time.Time          `json:"followedAt,omitempty" bson:"followedAt,omitempty"`
-	Status     FollowStatus       `json:"status" bson:"status" binding:"required"`
+	ID          primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
+	FollowingID primitive.ObjectID `json:"followingId" bson:"followingId" binding:"required"`
+	FollowedID  primitive.ObjectID `json:"followedId" bson:"followedId" binding:"required"`
+	FollowedAt  time.Time          `json:"followedAt,omitempty" bson:"followedAt,omitempty"`
+	Status      FollowStatus       `json:"status" bson:"status" binding:"required"`
 }
 
 type FollowStatus string
