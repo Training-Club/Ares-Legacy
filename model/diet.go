@@ -34,7 +34,7 @@ type Food struct {
 	Iron          uint16             `json:"iron,omitempty" bson:"iron,omitempty"`
 }
 
-// FoodMeasurement is a nested-document stored within the Food struct which tracks the measurement
+// FoodMeasureable is a nested-document stored within the Food struct which tracks the measurement
 // system being applied and the size of the measurement. By default, a food entry should start with a measurement
 // and a size of 1
 //
