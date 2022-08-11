@@ -307,6 +307,7 @@ func (controller *AresController) CreateStandardAccount() gin.HandlerFunc {
 			Username: params.Username,
 			Email:    params.Email,
 			Password: hashedPwd,
+			Type:     model.STANDARD,
 		}
 
 		id, err := database.InsertOne(dbQueryParams, acc)
