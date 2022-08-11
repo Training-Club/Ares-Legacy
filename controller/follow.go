@@ -90,7 +90,7 @@ func (controller *AresController) GetConnectionCount(key string) gin.HandlerFunc
 			return
 		}
 
-		count, err := database.Count(database.QueryParams{
+		count, err := database.Count[model.Follow](database.QueryParams{
 			MongoClient:    controller.DB,
 			DatabaseName:   controller.DatabaseName,
 			CollectionName: controller.CollectionName,
@@ -139,7 +139,7 @@ func (controller *AresController) GetConnectionList(key string) gin.HandlerFunc 
 			return
 		}
 
-		result, err := database.FindManyDocumentsByFilterWithOpts(database.QueryParams{
+		result, err := database.FindManyDocumentsByFilterWithOpts[model.Follow](database.QueryParams{
 			MongoClient:    controller.DB,
 			DatabaseName:   controller.DatabaseName,
 			CollectionName: controller.CollectionName,
