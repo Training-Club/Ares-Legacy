@@ -13,4 +13,5 @@ func ApplyRoutes(engine *gin.Engine, mongoClient *mongo.Client) {
 	ApplyExerciseRoutes(engine, mongoClient)
 	ApplyFollowRoutes(engine, mongoClient)
 	ApplyContentRoutes(engine, mongoClient)
+	ApplyFileUploadRoutes(engine, mongoClient)
 }
