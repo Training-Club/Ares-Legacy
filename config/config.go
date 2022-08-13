@@ -32,6 +32,7 @@ type S3 struct {
 	Token    string `toml:"token"`
 	Endpoint string `toml:"endpoint"`
 	Region   string `toml:"region"`
+	Bucket   string `toml:"bucket"`
 }
 
 func Get() *Configuration {
