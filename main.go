@@ -4,7 +4,6 @@ import (
 	"ares/config"
 	"ares/database"
 	"ares/routing"
-	"fmt"
 	"github.com/gin-gonic/gin"
 )
 
@@ -22,8 +21,6 @@ func main() {
 		Endpoint: conf.S3.Endpoint,
 		Region:   conf.S3.Region,
 	})
-
-	fmt.Println(conf.S3)
 
 	if err != nil {
 		panic("failed to establish s3 client instance: " + err.Error())
