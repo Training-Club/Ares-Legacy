@@ -80,3 +80,24 @@ func UploadFile(s3Client *s3.Client, bucket string, file []byte) (string, error)
 
 	return id.String(), nil
 }
+
+// Exists accepts an S3 client instance, a bucket name, and
+// a file name to check if it exists within the S3 instance.
+//
+// If successful, a bool of true will be returned
+func Exists(s3Client *s3.Client, bucket string, filename string) (bool, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(60)*time.Second)
+	defer cancel()
+
+	input := &s3.HeadObjectInput{
+		Bucket: aws.String(bucket),
+		Key:    aws.String(filename),
+	}
+
+	_, err := s3Client.HeadObject(ctx, input)
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
