@@ -114,7 +114,37 @@ func (controller *AresController) GetCommentsByPostID(key string) gin.HandlerFun
 // or the comments collection
 func (controller *AresController) GetCommentCount(key string) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		var postType model.PostItemType
+		id := ctx.Param("id")
 
+		_, err := primitive.ObjectIDFromHex(id)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "invalid post id hex"})
+			return
+		}
+
+		postType = model.POST
+		if key == "comment" {
+			postType = model.COMMENT
+		}
+
+		count, err := database.Count(database.QueryParams{
+			MongoClient:    controller.DB,
+			DatabaseName:   controller.DatabaseName,
+			CollectionName: controller.CollectionName,
+		}, bson.M{"post": id, "type": postType})
+
+		if err != nil {
+			if err == mongo.ErrNoDocuments {
+				ctx.AbortWithStatus(http.StatusNotFound)
+				return
+			}
+
+			ctx.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+
+		ctx.JSON(http.StatusOK, gin.H{"result": count})
 	}
 }
 
@@ -135,7 +165,31 @@ func (controller *AresController) GetLikeList(key string) gin.HandlerFunc {
 // or the comments collection
 func (controller *AresController) GetLikeCount(key string) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		id := ctx.Param("id")
 
+		_, err := primitive.ObjectIDFromHex(id)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "invalid post id hex"})
+			return
+		}
+
+		count, err := database.Count(database.QueryParams{
+			MongoClient:    controller.DB,
+			DatabaseName:   controller.DatabaseName,
+			CollectionName: controller.CollectionName,
+		}, bson.M{"post": id})
+
+		if err != nil {
+			if err == mongo.ErrNoDocuments {
+				ctx.AbortWithStatus(http.StatusNotFound)
+				return
+			}
+
+			ctx.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+
+		ctx.JSON(http.StatusOK, gin.H{"result": count})
 	}
 }
 
