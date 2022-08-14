@@ -266,8 +266,71 @@ func (controller *AresController) CreatePost(s3Client *s3.Client, bucket string)
 // If successful, a comment ID will be returned with the document ID
 // in a success 200 OK response
 func (controller *AresController) CreateComment() gin.HandlerFunc {
-	return func(ctx *gin.Context) {
+	type Params struct {
+		Post     primitive.ObjectID `json:"post" binding:"required"`
+		PostType model.PostItemType `json:"type" binding:"required"`
+		Text     string             `json:"text" binding:"required"`
+	}
 
+	return func(ctx *gin.Context) {
+		var collectionName string
+		var params Params
+
+		err := ctx.ShouldBindJSON(&params)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "failed to bind params: " + err.Error()})
+			return
+		}
+
+		collectionName = "post"
+		if params.PostType == model.COMMENT {
+			collectionName = "comment"
+		}
+
+		authorId := ctx.GetString("accountId")
+		authorIdHex, err := primitive.ObjectIDFromHex(authorId)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "author id is not a valid hex"})
+			return
+		}
+
+		// TODO: Check if authorId can make a comment on this post
+		_, err = database.FindDocumentById(database.QueryParams{
+			MongoClient:    controller.DB,
+			DatabaseName:   controller.DatabaseName,
+			CollectionName: collectionName,
+		}, params.Post.Hex())
+
+		if err != nil {
+			if err == mongo.ErrNoDocuments {
+				ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"message": "post not found"})
+				return
+			}
+
+			ctx.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+
+		comment := model.Comment{
+			Post:      params.Post,
+			Author:    authorIdHex,
+			PostType:  params.PostType,
+			Text:      params.Text,
+			CreatedAt: time.Now(),
+		}
+
+		inserted, err := database.InsertOne[model.Comment](database.QueryParams{
+			MongoClient:    controller.DB,
+			DatabaseName:   controller.DatabaseName,
+			CollectionName: controller.CollectionName,
+		}, comment)
+
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "failed to insert comment document"})
+			return
+		}
+
+		ctx.JSON(http.StatusCreated, gin.H{"message": inserted})
 	}
 }
 
