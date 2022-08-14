@@ -20,6 +20,8 @@ type Post struct {
 type ContentItem struct {
 	Destination string      `json:"destination" bson:"destination" binding:"required"`
 	Type        ContentType `json:"type" bson:"type" binding:"required"`
+	Latitude    float64     `json:"latitude,omitempty" bson:"latitude,omitempty"`
+	Longitude   float64     `json:"longitude,omitempty" bson:"longitude,omitempty"`
 }
 
 type Like struct {
