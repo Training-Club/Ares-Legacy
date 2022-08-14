@@ -273,18 +273,12 @@ func (controller *AresController) CreateComment() gin.HandlerFunc {
 	}
 
 	return func(ctx *gin.Context) {
-		var collectionName string
 		var params Params
 
 		err := ctx.ShouldBindJSON(&params)
 		if err != nil {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "failed to bind params: " + err.Error()})
 			return
-		}
-
-		collectionName = "post"
-		if params.PostType == model.COMMENT {
-			collectionName = "comment"
 		}
 
 		authorId := ctx.GetString("accountId")
@@ -295,11 +289,19 @@ func (controller *AresController) CreateComment() gin.HandlerFunc {
 		}
 
 		// TODO: Check if authorId can make a comment on this post
-		_, err = database.FindDocumentById(database.QueryParams{
-			MongoClient:    controller.DB,
-			DatabaseName:   controller.DatabaseName,
-			CollectionName: collectionName,
-		}, params.Post.Hex())
+		if params.PostType == model.POST {
+			_, err = database.FindDocumentById[model.Post](database.QueryParams{
+				MongoClient:    controller.DB,
+				DatabaseName:   controller.DatabaseName,
+				CollectionName: "post",
+			}, params.Post.Hex())
+		} else if params.PostType == model.COMMENT {
+			_, err = database.FindDocumentById[model.Comment](database.QueryParams{
+				MongoClient:    controller.DB,
+				DatabaseName:   controller.DatabaseName,
+				CollectionName: "comment",
+			}, params.Post.Hex())
+		}
 
 		if err != nil {
 			if err == mongo.ErrNoDocuments {
