@@ -13,6 +13,6 @@ func ApplyRoutes(engine *gin.Engine, mongoClient *mongo.Client, s3Client *s3.Cli
 	ApplyExerciseInfoRoutes(engine, mongoClient)
 	ApplyExerciseRoutes(engine, mongoClient)
 	ApplyFollowRoutes(engine, mongoClient)
-	ApplyContentRoutes(engine, mongoClient)
+	ApplyContentRoutes(engine, mongoClient, s3Client)
 	ApplyFileUploadRoutes(engine, mongoClient, s3Client)
 }
