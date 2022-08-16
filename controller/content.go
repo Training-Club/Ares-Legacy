@@ -102,12 +102,40 @@ func (controller *AresController) GetPostsByQuery() gin.HandlerFunc {
 
 // GetCommentsByPostID returns a paginated list of comment objects
 // matching the provided post ID
-//
-// 'key' param determines if we should look in the posts or
-// the comments collection
-func (controller *AresController) GetCommentsByPostID(key string) gin.HandlerFunc {
+func (controller *AresController) GetCommentsByPostID() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		postId := ctx.Param("id")
+		page := ctx.DefaultQuery("page", "0")
 
+		postIdHex, err := primitive.ObjectIDFromHex(postId)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "post id invalid hex"})
+			return
+		}
+
+		pageNumber, err := strconv.Atoi(page)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "invalid page number"})
+			return
+		}
+
+		comments, err := database.FindManyDocumentsByFilterWithOpts[model.Comment](database.QueryParams{
+			MongoClient:    controller.DB,
+			DatabaseName:   controller.DatabaseName,
+			CollectionName: controller.CollectionName,
+		}, bson.M{"post": postIdHex}, options.Find().SetLimit(10).SetSkip(int64(pageNumber*10)).SetSort(bson.D{{Key: "createdAt", Value: -1}}))
+
+		if err != nil {
+			if err == mongo.ErrNoDocuments {
+				ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"message": "comments not found"})
+				return
+			}
+
+			ctx.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+
+		ctx.JSON(http.StatusOK, gin.H{"result": comments})
 	}
 }
 

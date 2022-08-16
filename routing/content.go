@@ -46,8 +46,7 @@ func ApplyContentRoutes(router *gin.Engine, mongoClient *mongo.Client, s3Client 
 		v1Authorized.GET("/comment/id/:id/likes/count", likeCtrl.GetLikeCount("comment"))
 
 		// get comments (paginated)
-		v1Authorized.GET("/post/id/:id/comments", commentCtrl.GetCommentsByPostID("post"))
-		v1Authorized.GET("/comment/id/:id/comments", commentCtrl.GetCommentsByPostID("comment"))
+		v1Authorized.GET("/post/id/:id/comments", commentCtrl.GetCommentsByPostID())
 
 		// get comment count
 		v1Authorized.GET("/post/id/:id/comments/count", commentCtrl.GetCommentCount("post"))
