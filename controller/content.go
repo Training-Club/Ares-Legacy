@@ -118,7 +118,7 @@ func (controller *AresController) GetCommentCount(key string) gin.HandlerFunc {
 		var postType model.PostItemType
 		id := ctx.Param("id")
 
-		_, err := primitive.ObjectIDFromHex(id)
+		idHex, err := primitive.ObjectIDFromHex(id)
 		if err != nil {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "invalid post id hex"})
 			return
@@ -133,7 +133,7 @@ func (controller *AresController) GetCommentCount(key string) gin.HandlerFunc {
 			MongoClient:    controller.DB,
 			DatabaseName:   controller.DatabaseName,
 			CollectionName: controller.CollectionName,
-		}, bson.M{"post": id, "type": postType})
+		}, bson.M{"post": idHex, "type": postType})
 
 		if err != nil {
 			if err == mongo.ErrNoDocuments {
