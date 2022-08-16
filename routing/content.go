@@ -67,7 +67,6 @@ func ApplyContentRoutes(router *gin.Engine, mongoClient *mongo.Client, s3Client 
 		v1Authorized.DELETE("/comment/:id", commentCtrl.DeleteComment())
 
 		// remove likes
-		v1Authorized.DELETE("/like/post/:id", likeCtrl.RemoveLike("post"))
-		v1Authorized.DELETE("/like/comment/:id", likeCtrl.RemoveLike("comment"))
+		v1Authorized.DELETE("/like/post/:id", likeCtrl.RemoveLike())
 	}
 }

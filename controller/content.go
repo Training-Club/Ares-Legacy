@@ -465,9 +465,48 @@ func (controller *AresController) AddLike() gin.HandlerFunc {
 //
 // Unlike other delete functions, this does not store the result in
 // a 'deleted' version of the database as it is arbitrary to hold on to
-func (controller *AresController) RemoveLike(key string) gin.HandlerFunc {
-	return func(ctx *gin.Context) {
+func (controller *AresController) RemoveLike() gin.HandlerFunc {
+	dbQueryParams := database.QueryParams{
+		MongoClient:    controller.DB,
+		DatabaseName:   controller.DatabaseName,
+		CollectionName: controller.CollectionName,
+	}
 
+	return func(ctx *gin.Context) {
+		accountId := ctx.GetString("accountId")
+		postId := ctx.Param("id")
+
+		accountIdHex, err := primitive.ObjectIDFromHex(accountId)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "bad account id hex"})
+			return
+		}
+
+		postIdHex, err := primitive.ObjectIDFromHex(postId)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "bad post id hex"})
+		}
+
+		filter := bson.M{"post": postIdHex, "author": accountIdHex}
+		existingLike, err := database.FindDocumentByFilter[model.Like](dbQueryParams, filter)
+
+		if err != nil {
+			if err == mongo.ErrNoDocuments {
+				ctx.AbortWithStatus(http.StatusNotFound)
+				return
+			}
+
+			ctx.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+
+		deletedResult, err := database.DeleteOne(dbQueryParams, existingLike)
+		if err != nil || deletedResult.DeletedCount <= 0 {
+			ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"message": "failed to delete document"})
+			return
+		}
+
+		ctx.Status(http.StatusOK)
 	}
 }
 
