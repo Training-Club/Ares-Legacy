@@ -9,6 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"net/http"
+	"reflect"
 	"time"
 )
 
@@ -341,8 +342,95 @@ func (controller *AresController) CreateComment() gin.HandlerFunc {
 // If successful, a like ID will be returned from the database
 // in a success 200 OK response
 func (controller *AresController) AddLike() gin.HandlerFunc {
-	return func(ctx *gin.Context) {
+	type Params struct {
+		Post     primitive.ObjectID `json:"post" binding:"required"`
+		PostType model.PostItemType `json:"type" binding:"required"`
+	}
 
+	dbQueryParams := database.QueryParams{
+		MongoClient:    controller.DB,
+		DatabaseName:   controller.DatabaseName,
+		CollectionName: controller.CollectionName,
+	}
+
+	return func(ctx *gin.Context) {
+		var params Params
+
+		accountId := ctx.GetString("accountId")
+		accountIdHex, err := primitive.ObjectIDFromHex(accountId)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "bad account id hex"})
+			return
+		}
+
+		err = ctx.ShouldBindJSON(&params)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "failed to unmarshal params: " + err.Error()})
+			return
+		}
+
+		// TODO: Check if user can see this post
+		if params.PostType == model.POST {
+			_, err := database.FindDocumentById[model.Post](database.QueryParams{
+				MongoClient:    controller.DB,
+				DatabaseName:   controller.DatabaseName,
+				CollectionName: "post",
+			}, params.Post.Hex())
+
+			if err != nil {
+				if err == mongo.ErrNoDocuments {
+					ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"message": "post not found"})
+					return
+				}
+
+				ctx.AbortWithStatus(http.StatusInternalServerError)
+				return
+			}
+		} else if params.PostType == model.COMMENT {
+			_, err := database.FindDocumentById[model.Comment](database.QueryParams{
+				MongoClient:    controller.DB,
+				DatabaseName:   controller.DatabaseName,
+				CollectionName: "comment",
+			}, params.Post.Hex())
+
+			if err != nil {
+				if err == mongo.ErrNoDocuments {
+					ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"message": "comment not found"})
+					return
+				}
+
+				ctx.AbortWithStatus(http.StatusInternalServerError)
+				return
+			}
+		}
+
+		filter := bson.M{"post": params.Post, "author": accountIdHex}
+		existingRecord, err := database.FindDocumentByFilter[model.Like](dbQueryParams, filter)
+
+		if err != nil && err != mongo.ErrNoDocuments {
+			ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "failed to check for existing like record: " + err.Error()})
+			return
+		}
+
+		if !reflect.ValueOf(existingRecord).IsZero() {
+			ctx.AbortWithStatus(http.StatusConflict)
+			return
+		}
+
+		like := model.Like{
+			Author:   accountIdHex,
+			Post:     params.Post,
+			PostType: params.PostType,
+			LikedAt:  time.Now(),
+		}
+
+		inserted, err := database.InsertOne(dbQueryParams, like)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "failed to insert document"})
+			return
+		}
+
+		ctx.JSON(http.StatusCreated, gin.H{"message": inserted})
 	}
 }
 
