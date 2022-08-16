@@ -8,8 +8,10 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"net/http"
 	"reflect"
+	"strconv"
 	"time"
 )
 
@@ -156,7 +158,32 @@ func (controller *AresController) GetCommentCount(key string) gin.HandlerFunc {
 // or the comments collection
 func (controller *AresController) GetLikeList(key string) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		if key != "post" && key != "comment" {
+			ctx.AbortWithStatus(http.StatusBadRequest)
+			return
+		}
 
+		postId := ctx.Param("id")
+		page := ctx.DefaultQuery("page", "0")
+		postIdHex, err := primitive.ObjectIDFromHex(postId)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "bad post id hex"})
+			return
+		}
+
+		pageNumber, err := strconv.Atoi(page)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "invalid page number"})
+			return
+		}
+
+		likes, err := database.FindManyDocumentsByFilterWithOpts[model.Like](database.QueryParams{
+			MongoClient:    controller.DB,
+			DatabaseName:   controller.DatabaseName,
+			CollectionName: controller.CollectionName,
+		}, bson.M{"post": postIdHex}, options.Find().SetLimit(50).SetSkip(int64(pageNumber*50)))
+
+		ctx.JSON(http.StatusOK, gin.H{"result": likes})
 	}
 }
 
