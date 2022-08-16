@@ -4,7 +4,6 @@ import (
 	"ares/database"
 	"ares/model"
 	"ares/util"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -220,8 +219,6 @@ func (controller *AresController) StartFollowing() gin.HandlerFunc {
 		if !reflect.ValueOf(existingRecord).IsZero() {
 			ctx.AbortWithStatusJSON(http.StatusConflict, gin.H{"message": "follow record already exists"})
 			return
-		} else {
-			fmt.Println("did not find any existing record matching the following and followed hex")
 		}
 
 		followedAccount, err := database.FindDocumentById[model.Account](accountDbQueryParams, followedId)
