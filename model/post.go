@@ -33,7 +33,7 @@ type Like struct {
 }
 
 type Comment struct {
-	ID        primitive.ObjectID `json:"id,omitempty" bson:"id,omitempty"`
+	ID        primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
 	Post      primitive.ObjectID `json:"post" bson:"post" binding:"required"`
 	Author    primitive.ObjectID `json:"author" bson:"author" binding:"required"`
 	PostType  PostItemType       `json:"type" bson:"type" binding:"required"`
