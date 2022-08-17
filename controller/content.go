@@ -3,6 +3,7 @@ package controller
 import (
 	"ares/database"
 	"ares/model"
+	"ares/util"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
@@ -96,7 +97,77 @@ func (controller *AresController) GetPostByID() gin.HandlerFunc {
 // search query parameters
 func (controller *AresController) GetPostsByQuery() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		authorId, authorIdPresent := ctx.GetQuery("author")
+		text, textPresent := ctx.GetQuery("text")
+		tags, tagsPresent := ctx.GetQueryArray("tags")
+		page := ctx.DefaultQuery("page", "0")
 
+		if !authorIdPresent && !textPresent && !tagsPresent {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "need one of the required fields: 'author', 'text' or 'tags"})
+			return
+		}
+
+		filter := bson.M{}
+
+		if authorIdPresent {
+			authorIdHex, err := primitive.ObjectIDFromHex(authorId)
+			if err != nil {
+				ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "author id invalid hex"})
+				return
+			}
+
+			filter["author"] = authorIdHex
+		}
+
+		if textPresent {
+			match := util.IsAlphanumeric(text)
+			if match {
+				ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "search text body must be alphanumeric"})
+				return
+			}
+
+			filter["text"] = primitive.Regex{Pattern: text, Options: "i"}
+		}
+
+		if tagsPresent {
+			for _, tag := range tags {
+				match := util.IsAlphanumeric(tag)
+				if match {
+					ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "tags must be alphanumeric"})
+					return
+				}
+			}
+
+			filter["tags"] = bson.M{"$in": tags}
+		}
+
+		pageNumber, err := strconv.Atoi(page)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "invalid page number"})
+			return
+		}
+
+		result, err := database.FindManyDocumentsByFilterWithOpts[model.Post](database.QueryParams{
+			MongoClient:    controller.DB,
+			DatabaseName:   controller.DatabaseName,
+			CollectionName: controller.CollectionName,
+		}, filter, options.
+			Find().
+			SetLimit(10).
+			SetSkip(int64(pageNumber*10)).
+			SetSort(bson.D{{Key: "createdAt", Value: -1}}))
+
+		if err != nil {
+			if err == mongo.ErrNoDocuments {
+				ctx.AbortWithStatus(http.StatusBadRequest)
+				return
+			}
+
+			ctx.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+
+		ctx.JSON(http.StatusOK, gin.H{"result": result})
 	}
 }
 
