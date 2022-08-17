@@ -611,15 +611,89 @@ func (controller *AresController) RemoveLike() gin.HandlerFunc {
 
 // UpdatePost performs an update on an existing Post document in the database
 func (controller *AresController) UpdatePost() gin.HandlerFunc {
-	return func(ctx *gin.Context) {
+	dbQueryParams := database.QueryParams{
+		MongoClient:    controller.DB,
+		DatabaseName:   controller.DatabaseName,
+		CollectionName: controller.CollectionName,
+	}
 
+	return func(ctx *gin.Context) {
+		var post model.Post
+
+		err := ctx.ShouldBindJSON(&post)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "failed to unmarshal post object: " + err.Error()})
+			return
+		}
+
+		_, err = database.FindDocumentById[model.Post](dbQueryParams, post.ID.Hex())
+		if err != nil {
+			if err == mongo.ErrNoDocuments {
+				ctx.AbortWithStatus(http.StatusNotFound)
+				return
+			}
+
+			ctx.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+
+		post.EditedAt = time.Now()
+		updatedCount, err := database.UpdateOne[model.Post](dbQueryParams, post.ID, post)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "failed to update document: "})
+			return
+		}
+
+		if updatedCount <= 0 {
+			ctx.AbortWithStatus(http.StatusNotFound)
+			return
+		}
+
+		ctx.Status(http.StatusOK)
 	}
 }
 
 // UpdateComment performs an update on an existing Comment document in the database
 func (controller *AresController) UpdateComment() gin.HandlerFunc {
-	return func(ctx *gin.Context) {
+	dbQueryParams := database.QueryParams{
+		MongoClient:    controller.DB,
+		DatabaseName:   controller.DatabaseName,
+		CollectionName: controller.CollectionName,
+	}
 
+	return func(ctx *gin.Context) {
+		var comment model.Comment
+
+		err := ctx.ShouldBind(&comment)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "failed to unmarshal comment struct: " + err.Error()})
+			return
+		}
+
+		_, err = database.FindDocumentById[model.Comment](dbQueryParams, comment.ID.Hex())
+		if err != nil {
+			if err == mongo.ErrNoDocuments {
+				ctx.AbortWithStatus(http.StatusNotFound)
+				return
+			}
+
+			ctx.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+
+		comment.EditedAt = time.Now()
+		updatedCount, err := database.UpdateOne(dbQueryParams, comment.ID, comment)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "failed to update comment document: " + err.Error()})
+			return
+		}
+
+		if updatedCount <= 0 {
+			ctx.AbortWithStatus(http.StatusNotFound)
+			return
+		}
+
+		ctx.Status(http.StatusOK)
 	}
 }
 

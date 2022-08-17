@@ -39,6 +39,7 @@ type Comment struct {
 	PostType  PostItemType       `json:"type" bson:"type" binding:"required"`
 	Text      string             `json:"text" bson:"text" binding:"required"`
 	CreatedAt time.Time          `json:"createdAt" bson:"createdAt" binding:"required"`
+	EditedAt  time.Time          `json:"editedAt,omitempty" bson:"editedAt,omitempty"`
 }
 
 type ContentType string
