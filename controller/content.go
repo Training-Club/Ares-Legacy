@@ -703,8 +703,68 @@ func (controller *AresController) UpdateComment() gin.HandlerFunc {
 // and moved to a 'deleted' version of the collection
 // and a deleted ID will be returned in a success 200 OK response
 func (controller *AresController) DeletePost() gin.HandlerFunc {
-	return func(ctx *gin.Context) {
+	dbQueryParams := database.QueryParams{
+		MongoClient:    controller.DB,
+		DatabaseName:   controller.DatabaseName,
+		CollectionName: controller.CollectionName,
+	}
 
+	return func(ctx *gin.Context) {
+		accountId := ctx.GetString("accountId")
+		postId := ctx.Param("id")
+
+		accountIdHex, err := primitive.ObjectIDFromHex(accountId)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "account id is invalid hex"})
+			return
+		}
+
+		postIdHex, err := primitive.ObjectIDFromHex(postId)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "post id is invalid hex"})
+			return
+		}
+
+		existingPost, err := database.FindDocumentById[model.Post](dbQueryParams, postIdHex.Hex())
+
+		if err != nil {
+			if err == mongo.ErrNoDocuments {
+				ctx.AbortWithStatus(http.StatusNotFound)
+				return
+			}
+
+			ctx.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+
+		if existingPost.Author != accountIdHex {
+			ctx.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+
+		deletedPost := model.DeletedPost{
+			Post:      existingPost,
+			RemovalAt: time.Now().Add(time.Hour * 24 * 7 * time.Duration(4)),
+		}
+
+		_, err = database.InsertOne[model.DeletedPost](database.QueryParams{
+			MongoClient:    controller.DB,
+			DatabaseName:   controller.DatabaseName,
+			CollectionName: controller.CollectionName + "_deleted",
+		}, deletedPost)
+
+		if err != nil {
+			ctx.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+
+		deleteResult, err := database.DeleteOne[model.Post](dbQueryParams, existingPost)
+		if deleteResult.DeletedCount <= 0 || err != nil {
+			ctx.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+
+		ctx.Status(http.StatusOK)
 	}
 }
 
@@ -714,7 +774,65 @@ func (controller *AresController) DeletePost() gin.HandlerFunc {
 // and moved to a 'deleted' version of the collection
 // and a deleted ID will be returned in a success 200 OK response
 func (controller *AresController) DeleteComment() gin.HandlerFunc {
-	return func(ctx *gin.Context) {
+	dbQueryParams := database.QueryParams{
+		MongoClient:    controller.DB,
+		DatabaseName:   controller.DatabaseName,
+		CollectionName: controller.CollectionName,
+	}
 
+	return func(ctx *gin.Context) {
+		accountId := ctx.GetString("accountId")
+		commentId := ctx.Param("id")
+
+		accountIdHex, err := primitive.ObjectIDFromHex(accountId)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "account id is invalid hex"})
+			return
+		}
+
+		commentIdHex, err := primitive.ObjectIDFromHex(commentId)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "comment id is invalid hex"})
+			return
+		}
+
+		existingComment, err := database.FindDocumentById[model.Comment](dbQueryParams, commentIdHex.Hex())
+		if err != nil {
+			if err == mongo.ErrNoDocuments {
+				ctx.AbortWithStatus(http.StatusNotFound)
+				return
+			}
+
+			ctx.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+
+		if existingComment.Author != accountIdHex {
+			ctx.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+
+		deletedComment := model.DeletedComment{
+			Comment:   existingComment,
+			RemovalAt: time.Now().Add(time.Hour * 24 * 7 * time.Duration(4)),
+		}
+
+		_, err = database.InsertOne[model.DeletedComment](database.QueryParams{
+			MongoClient:    controller.DB,
+			DatabaseName:   controller.DatabaseName,
+			CollectionName: controller.CollectionName + "_deleted",
+		}, deletedComment)
+		if err != nil {
+			ctx.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+
+		deleteResult, err := database.DeleteOne[model.Comment](dbQueryParams, existingComment)
+		if deleteResult.DeletedCount <= 0 || err != nil {
+			ctx.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+
+		ctx.Status(http.StatusOK)
 	}
 }
