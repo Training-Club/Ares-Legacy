@@ -71,21 +71,30 @@ func getAccountsFuzzySearch(
 func (controller *AresController) GetAccountAvailability() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		key := ctx.Param("key")
-		alphanumeric := util.IsAlphanumeric(key)
-		if !alphanumeric {
+		match := util.IsAlphanumeric(key)
+		if match {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "key must be alphanumeric"})
 			return
 		}
 
 		value := ctx.Param("value")
-		alphanumeric = util.IsAlphanumeric(value)
-		if !alphanumeric {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "value must be alphanumeric"})
-			return
+
+		if key == "username" {
+			match = util.IsAlphanumeric(value)
+			if match {
+				ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "value must be alphanumeric"})
+				return
+			}
+		} else if key == "email" {
+			match = util.IsValidEmail(value)
+			if match {
+				ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "email is invalid"})
+				return
+			}
 		}
 
 		if key != "username" && key != "email" {
-			ctx.AbortWithStatusJSON(400, gin.H{"message": "key field must be 'username' or 'email'"})
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "key field must be 'username' or 'email'"})
 			return
 		}
 
@@ -102,7 +111,7 @@ func (controller *AresController) GetAccountAvailability() gin.HandlerFunc {
 				return
 			}
 
-			ctx.AbortWithStatus(http.StatusBadRequest)
+			ctx.AbortWithStatus(http.StatusInternalServerError)
 		}
 
 		ctx.Status(http.StatusConflict)
