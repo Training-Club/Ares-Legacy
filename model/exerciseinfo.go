@@ -29,5 +29,6 @@ const (
 	BACK       MuscleGroup = "BACK"
 	CHEST      MuscleGroup = "CHEST"
 	THIGHS     MuscleGroup = "THIGHS"
+	GLUTES     MuscleGroup = "GLUTES"
 	CALVES     MuscleGroup = "CALVES"
 )
