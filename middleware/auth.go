@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
 	"net/http"
+	"strconv"
 )
 
 func ValidateToken(encodedToken string) (*jwt.Token, error) {
@@ -32,9 +33,16 @@ func ValidateRequest() gin.HandlerFunc {
 		}
 
 		tokenString := authHeader[len(BearerSchema):]
-		token, err := ValidateToken(tokenString)
+
+		unquotedTokenString, err := strconv.Unquote(tokenString)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "failed to unquote token"})
+			return
+		}
+
+		token, err := ValidateToken(unquotedTokenString)
 		if err != nil || !token.Valid {
-			ctx.AbortWithStatus(http.StatusUnauthorized)
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "token invalid: " + err.Error()})
 			return
 		}
 
