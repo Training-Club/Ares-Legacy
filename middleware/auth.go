@@ -32,15 +32,22 @@ func ValidateRequest() gin.HandlerFunc {
 			return
 		}
 
-		tokenString := authHeader[len(BearerSchema):]
+		var tokenString string
+		var err error
+		tokenString = authHeader[len(BearerSchema):]
 
-		unquotedTokenString, err := strconv.Unquote(tokenString)
+		// if the request is sent with a prefixed double-quote we need
+		// to unquote the token before attempting to verify it
+		if string(tokenString[0]) == `"` {
+			tokenString, err = strconv.Unquote(tokenString)
+		}
+
 		if err != nil {
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "failed to unquote token"})
 			return
 		}
 
-		token, err := ValidateToken(unquotedTokenString)
+		token, err := ValidateToken(tokenString)
 		if err != nil || !token.Valid {
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "token invalid: " + err.Error()})
 			return
