@@ -29,3 +29,9 @@ type DeletedComment struct {
 	Comment   Comment            `json:"comment" bson:"comment" binding:"required"`
 	RemovalAt time.Time          `json:"removalAt" bson:"removalAt" binding:"required"`
 }
+
+type DeletedLocation struct {
+	ID        primitive.ObjectID `json:"id,omitempty" bson:"_id"`
+	Location  Location           `json:"location" bson:"location" binding:"required"`
+	RemovalAt time.Time          `json:"removalAt" bson:"removalAt" binding:"required"`
+}
