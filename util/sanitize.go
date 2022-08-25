@@ -9,6 +9,13 @@ func IsAlphanumeric(s string) bool {
 	return re.MatchString(s)
 }
 
+// IsAlphanumericWithWhitespace returns a bool if the provided
+// string matches alphanumeric regexp with spaces allowed
+func IsAlphanumericWithWhitespace(s string) bool {
+	re := regexp.MustCompile(`[^a-zA-Z0-9._-]+$`)
+	return re.MatchString(s)
+}
+
 // IsValidPassword returns a bool if the provided string
 // matches valid password regexp
 func IsValidPassword(s string) bool {
