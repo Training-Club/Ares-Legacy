@@ -111,7 +111,8 @@ func (controller *AresController) GetAccountAvailability() gin.HandlerFunc {
 				return
 			}
 
-			ctx.AbortWithStatus(http.StatusInternalServerError)
+			ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "failed to perform lookup: " + err.Error()})
+			return
 		}
 
 		ctx.Status(http.StatusConflict)
