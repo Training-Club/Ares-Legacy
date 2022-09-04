@@ -119,7 +119,7 @@ func (controller *AresController) GetConnectionCount(key string) gin.HandlerFunc
 func (controller *AresController) GetConnectionList(key string) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		if key != "followed" && key != "following" {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "key must be 'follower' or 'following'"})
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "key must be 'followed' or 'following'"})
 			return
 		}
 
