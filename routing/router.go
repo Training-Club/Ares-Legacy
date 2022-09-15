@@ -16,4 +16,5 @@ func ApplyRoutes(engine *gin.Engine, mongoClient *mongo.Client, s3Client *s3.Cli
 	ApplyContentRoutes(engine, mongoClient, s3Client)
 	ApplyLocationRoutes(engine, mongoClient)
 	ApplyFileUploadRoutes(engine, mongoClient, s3Client)
+	ApplyBlogRoutes(engine, mongoClient)
 }
