@@ -46,6 +46,38 @@ func (controller *AresController) GetBlogById() gin.HandlerFunc {
 	}
 }
 
+// GetBlogBySlug returns a single blog post matching
+// the provided slug
+func (controller *AresController) GetBlogBySlug() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		slug := ctx.Param("slug")
+
+		match := util.IsAlphanumericWithDashes(slug)
+		if match {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "invalid slug"})
+			return
+		}
+
+		blog, err := database.FindDocumentByKeyValue[string, model.BlogPost](database.QueryParams{
+			MongoClient:    controller.DB,
+			DatabaseName:   controller.DatabaseName,
+			CollectionName: controller.CollectionName,
+		}, "slug", slug)
+
+		if err != nil {
+			if err == mongo.ErrNoDocuments {
+				ctx.AbortWithStatus(http.StatusNotFound)
+				return
+			}
+
+			ctx.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+
+		ctx.JSON(http.StatusOK, blog)
+	}
+}
+
 // GetBlogByQuery returns an array of blog posts matching the
 // provided query
 func (controller *AresController) GetBlogByQuery() gin.HandlerFunc {
@@ -54,11 +86,6 @@ func (controller *AresController) GetBlogByQuery() gin.HandlerFunc {
 		body, bodyPresent := ctx.GetQuery("body")
 		tags, tagsPresent := ctx.GetQueryArray("tags")
 		page := ctx.DefaultQuery("page", "0")
-
-		if !titlePresent && !bodyPresent && !tagsPresent {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "need one of the required fields 'title', 'body' and 'tags'"})
-			return
-		}
 
 		filter := bson.M{}
 
@@ -149,6 +176,7 @@ func (controller *AresController) CreateBlog() gin.HandlerFunc {
 
 		blog := model.BlogPost{
 			Author:    authorHex,
+			Slug:      util.GenerateSlug(params.Title),
 			Title:     params.Title,
 			Subtitle:  params.Subtitle,
 			Body:      params.Body,

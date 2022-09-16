@@ -16,8 +16,9 @@ func ApplyBlogRoutes(router *gin.Engine, mongoClient *mongo.Client) {
 
 	v1 := router.Group("/v1/blog")
 	{
-		v1.GET("/:id", ctrl.GetBlogById())
+		v1.GET("/id/:id", ctrl.GetBlogById())
 		v1.GET("/query", ctrl.GetBlogByQuery())
+		v1.GET("/slug/:slug", ctrl.GetBlogBySlug())
 	}
 
 	v1Authorized := router.Group("/v1/blog")

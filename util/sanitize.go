@@ -16,6 +16,13 @@ func IsAlphanumericWithWhitespace(s string) bool {
 	return re.MatchString(s)
 }
 
+// IsAlphanumericWithDashes returns a bool if the provided
+// string matches alphanumeric regexp with dashes allowed
+func IsAlphanumericWithDashes(s string) bool {
+	re := regexp.MustCompile(`[/^[\w-]+$/]`)
+	return re.MatchString(s)
+}
+
 // IsValidPassword returns a bool if the provided string
 // matches valid password regexp
 func IsValidPassword(s string) bool {
