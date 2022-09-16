@@ -35,3 +35,9 @@ type DeletedLocation struct {
 	Location  Location           `json:"location" bson:"location" binding:"required"`
 	RemovalAt time.Time          `json:"removalAt" bson:"removalAt" binding:"required"`
 }
+
+type DeletedBlogPost struct {
+	ID        primitive.ObjectID `json:"id,omitempty" bson:"_id"`
+	Blog      BlogPost           `json:"blog" bson:"blog" binding:"required"`
+	RemovalAt time.Time          `json:"removalAt" bson:"removalAt" binding:"required"`
+}

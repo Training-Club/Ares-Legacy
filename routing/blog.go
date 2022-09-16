@@ -2,6 +2,7 @@ package routing
 
 import (
 	"ares/controller"
+	"ares/middleware"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -17,11 +18,15 @@ func ApplyBlogRoutes(router *gin.Engine, mongoClient *mongo.Client) {
 	{
 		v1.GET("/:id", ctrl.GetBlogById())
 		v1.GET("/query", ctrl.GetBlogByQuery())
+	}
 
-		v1.POST("/", ctrl.CreateBlog())
+	v1Authorized := router.Group("/v1/blog")
+	v1Authorized.Use(middleware.ValidateRequest())
+	{
+		v1Authorized.POST("/", ctrl.CreateBlog())
 
-		v1.PUT("/", ctrl.UpdateBlog())
+		v1Authorized.PUT("/", ctrl.UpdateBlog())
 
-		v1.DELETE("/", ctrl.DeleteBlog())
+		v1Authorized.DELETE("/:id", ctrl.DeleteBlog())
 	}
 }
