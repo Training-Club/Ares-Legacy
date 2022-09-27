@@ -548,3 +548,22 @@ func (controller *AresController) DeleteAccount() gin.HandlerFunc {
 		ctx.JSON(http.StatusOK, gin.H{"deletedId": deletedId})
 	}
 }
+
+// GetAccountCount returns an estimated count of documents in the
+// accounts collection and returns it in a success 200
+func (controller *AresController) GetAccountCount() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		count, err := database.Count(database.QueryParams{
+			MongoClient:    controller.DB,
+			DatabaseName:   controller.DatabaseName,
+			CollectionName: controller.CollectionName,
+		}, bson.M{})
+
+		if err != nil {
+			ctx.JSON(http.StatusOK, gin.H{"result": 0})
+			return
+		}
+
+		ctx.JSON(http.StatusOK, gin.H{"result": count})
+	}
+}

@@ -253,3 +253,22 @@ func (controller *AresController) DeleteExerciseSession() gin.HandlerFunc {
 		ctx.JSON(http.StatusOK, gin.H{"deletedId": deletedId})
 	}
 }
+
+// GetExerciseSessionCount returns an estimated count of documents in the
+// exercise session collection and returns it in a success 200
+func (controller *AresController) GetExerciseSessionCount() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		count, err := database.Count(database.QueryParams{
+			MongoClient:    controller.DB,
+			DatabaseName:   controller.DatabaseName,
+			CollectionName: controller.CollectionName,
+		}, bson.M{})
+
+		if err != nil {
+			ctx.JSON(http.StatusOK, gin.H{"result": 0})
+			return
+		}
+
+		ctx.JSON(http.StatusOK, gin.H{"result": count})
+	}
+}

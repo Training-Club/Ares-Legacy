@@ -18,6 +18,7 @@ func ApplyAccountRoutes(router *gin.Engine, mongoClient *mongo.Client) {
 	v1 := router.Group("/v1/account")
 	{
 		v1.GET("/availability/:key/:value", ctrl.GetAccountAvailability())
+		v1.GET("/count", ctrl.GetAccountCount())
 
 		v1.POST("/recipe/standard", ctrl.CreateStandardAccount())
 		v1.POST("/recipe/apple")
