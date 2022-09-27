@@ -32,7 +32,7 @@ func ApplyContentRoutes(router *gin.Engine, mongoClient *mongo.Client, s3Client 
 
 	v1 := router.Group("/v1/content")
 	{
-		v1.GET("/count", postCtrl.GetPostCount())
+		v1.GET("/post/count", postCtrl.GetPostCount())
 	}
 
 	v1Authorized := router.Group("/v1/content")
