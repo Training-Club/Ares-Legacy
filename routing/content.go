@@ -30,6 +30,11 @@ func ApplyContentRoutes(router *gin.Engine, mongoClient *mongo.Client, s3Client 
 		CollectionName: "like",
 	}
 
+	v1 := router.Group("/v1/content")
+	{
+		v1.GET("/count", postCtrl.GetPostCount())
+	}
+
 	v1Authorized := router.Group("/v1/content")
 	v1Authorized.Use(middleware.ValidateRequest())
 	{
