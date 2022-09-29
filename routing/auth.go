@@ -4,18 +4,26 @@ import (
 	"ares/controller"
 	"ares/middleware"
 	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis/v9"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func ApplyAuthenticationRoutes(router *gin.Engine, mongoClient *mongo.Client) {
+func ApplyAuthenticationRoutes(
+	router *gin.Engine,
+	mongoClient *mongo.Client,
+	redisClient *redis.Client,
+) {
 	ctrl := controller.AresController{
 		DB:             mongoClient,
+		RedisCache:     redisClient,
 		CollectionName: "account",
 		DatabaseName:   "prod",
 	}
 
 	v1 := router.Group("/v1/auth")
 	{
+		v1.GET("/:refreshToken", ctrl.RefreshToken())
+
 		v1.POST("/", ctrl.AuthenticateStandardCredentials())
 	}
 

@@ -23,6 +23,11 @@ func main() {
 		Region:   conf.S3.Region,
 	})
 
+	redisClient, err := database.GetRedisClient(conf.Redis.Address, conf.Redis.Password, 0)
+	if err != nil {
+		panic("failed to establish redis cache instance: " + err.Error())
+	}
+
 	if err != nil {
 		panic("failed to establish s3 client instance: " + err.Error())
 		return
@@ -37,7 +42,7 @@ func main() {
 	router.Use(gin.Logger())
 	router.Use(cors.Default())
 
-	routing.ApplyRoutes(router, mongoClient, s3Client)
+	routing.ApplyRoutes(router, mongoClient, s3Client, redisClient)
 
 	err = router.Run(":" + conf.Gin.Port)
 	if err != nil {

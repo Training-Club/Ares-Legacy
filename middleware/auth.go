@@ -9,22 +9,24 @@ import (
 	"strconv"
 )
 
-func ValidateToken(encodedToken string) (*jwt.Token, error) {
-	conf := config.Get()
-	secret := conf.Auth.JWT
-
+// ValidateToken validates the provided encoded token against the
+// provided public key.
+func ValidateToken(encodedToken string, publicKey string) (*jwt.Token, error) {
 	return jwt.Parse(encodedToken, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("invalid token %v", token.Header["alg"])
 		}
 
-		return []byte(secret), nil
+		return []byte(publicKey), nil
 	})
 }
 
 func ValidateRequest() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		const BearerSchema = "Bearer "
+
+		conf := config.Get()
+		accessTokenPublicKey := conf.Auth.AccessTokenPublicKey
 		authHeader := ctx.GetHeader("Authorization")
 
 		if len(authHeader) < 7 {
@@ -47,7 +49,7 @@ func ValidateRequest() gin.HandlerFunc {
 			return
 		}
 
-		token, err := ValidateToken(tokenString)
+		token, err := ValidateToken(tokenString, accessTokenPublicKey)
 		if err != nil || !token.Valid {
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "token invalid: " + err.Error()})
 			return

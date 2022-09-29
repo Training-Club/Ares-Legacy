@@ -3,10 +3,17 @@ mode = "release"
 port = "8080"
 
 [auth]
-jwt = "trainingclub123456789"
+accessTokenPubKey = "trainingclub123456789"
+accessTokenTTL = 10
+refreshTokenPubKey = "trainingclub987654321"
+refreshTokenTTL = 525600
 
 [mongo]
 uri = "mongodb://mongodb:27017/prod"
+
+[redis]
+address = "redis-cache:6379"
+password = "tcdev"
 
 [s3]
 key = "YANJ2JZ6CVPV2JOJ6WSY"

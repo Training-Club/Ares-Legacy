@@ -10,6 +10,7 @@ type Configuration struct {
 	Gin   Gin   `toml:"gin"`
 	Auth  Auth  `toml:"auth"`
 	Mongo Mongo `toml:"mongo"`
+	Redis Redis `toml:"redis"`
 	S3    S3    `toml:"s3"`
 }
 
@@ -19,11 +20,20 @@ type Gin struct {
 }
 
 type Auth struct {
-	JWT string `toml:"jwt"`
+	AccessTokenPublicKey string `toml:"accessTokenPubKey"`
+	AccessTokenTTL       int    `toml:"accessTokenTTL"`
+
+	RefreshTokenPublicKey string `toml:"refreshTokenPubKey"`
+	RefreshTokenTTL       int    `toml:"refreshTokenTTL"`
 }
 
 type Mongo struct {
 	URI string `toml:"uri"`
+}
+
+type Redis struct {
+	Address  string `toml:"address"`
+	Password string `toml:"password"`
 }
 
 type S3 struct {
