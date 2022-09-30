@@ -195,3 +195,31 @@ func (controller *AresController) RefreshToken() gin.HandlerFunc {
 		ctx.JSON(http.StatusOK, gin.H{"access_token": newAccessToken})
 	}
 }
+
+// Logout accepts a refresh_token then invalidates it in the cache
+// then returns a success 200
+func (controller *AresController) Logout() gin.HandlerFunc {
+	conf := config.Get()
+	refreshPublicKey := conf.Auth.RefreshTokenPublicKey
+
+	return func(ctx *gin.Context) {
+		refreshToken := ctx.Param("refreshToken")
+		_, err := middleware.ValidateToken(refreshToken, refreshPublicKey)
+
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "failed to unmarshal refresh token"})
+			return
+		}
+
+		deleteCount, err := database.DeleteCacheValue(database.RedisClientParams{
+			RedisClient: controller.RedisCache,
+		}, refreshToken)
+
+		if err != nil || deleteCount <= 0 {
+			ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"message": "failed to delete from cache"})
+			return
+		}
+
+		ctx.Status(http.StatusOK)
+	}
+}

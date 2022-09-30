@@ -23,8 +23,8 @@ func ApplyAuthenticationRoutes(
 	v1 := router.Group("/v1/auth")
 	{
 		v1.GET("/:refreshToken", ctrl.RefreshToken())
-
 		v1.POST("/", ctrl.AuthenticateStandardCredentials())
+		v1.DELETE("/:refreshToken", ctrl.Logout())
 	}
 
 	v1Authorized := router.Group("/v1/auth")

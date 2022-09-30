@@ -44,3 +44,12 @@ func GetCacheValue(params RedisClientParams, key string) (string, error) {
 	result := params.RedisClient.Get(ctx, key)
 	return result.Result()
 }
+
+// DeleteCacheValue queries and removes a key from the cache
+func DeleteCacheValue(params RedisClientParams, key string) (int64, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+
+	deleteResult := params.RedisClient.Del(ctx, key)
+	return deleteResult.Result()
+}
