@@ -397,7 +397,7 @@ func (controller *AresController) CreateStandardAccount() gin.HandlerFunc {
 			return
 		}
 
-		ctx.SetCookie("refresh_token", refreshToken, refreshTokenTTL*60*60, "/", cookieDomain, true, true)
+		ctx.SetCookie("refresh_token", refreshToken, refreshTokenTTL*60*60, "/", cookieDomain, true, false)
 		ctx.JSON(http.StatusOK, gin.H{
 			"account": response,
 			"token":   accessToken,

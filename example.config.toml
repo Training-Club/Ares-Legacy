@@ -1,5 +1,5 @@
 [gin]
-mode = "release"
+mode = "dev"
 port = "8080"
 
 [auth]

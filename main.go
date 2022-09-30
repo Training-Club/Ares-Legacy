@@ -37,10 +37,25 @@ func main() {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
+	// middleware
 	router := gin.New()
 	router.Use(gin.Recovery())
 	router.Use(gin.Logger())
-	router.Use(cors.Default())
+
+	// cors specific
+	corsConfig := cors.DefaultConfig()
+
+	if conf.Gin.Mode == "release" {
+		corsConfig.AllowOrigins = []string{"https://www.trainingclubapp.com", "https://trainingclubapp.com", "http://localhost"}
+	} else {
+		corsConfig.AllowAllOrigins = true
+	}
+
+	corsConfig.AllowMethods = []string{"GET", "POST", "PUT", "DELETE", "HEAD"}
+	corsConfig.AllowHeaders = []string{"Authorization", "Origin", "Token", "Content-Type"}
+	corsConfig.ExposeHeaders = []string{"Set-Cookie", "Content-Length"}
+	corsConfig.AllowCredentials = true
+	router.Use(cors.New(corsConfig))
 
 	routing.ApplyRoutes(router, mongoClient, s3Client, redisClient)
 

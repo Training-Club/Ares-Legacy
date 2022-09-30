@@ -137,7 +137,7 @@ func (controller *AresController) AuthenticateStandardCredentials() gin.HandlerF
 			return
 		}
 
-		ctx.SetCookie("refresh_token", refreshToken, refreshTokenTTL*60*60, "/", cookieDomain, true, true)
+		ctx.SetCookie("refresh_token", refreshToken, refreshTokenTTL*60*60, "/", cookieDomain, true, false)
 		ctx.JSON(http.StatusOK, gin.H{"account": basic, "token": accessToken})
 	}
 }
