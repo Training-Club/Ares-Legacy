@@ -122,13 +122,6 @@ func (controller *AresController) AuthenticateStandardCredentials() gin.HandlerF
 			Type:     account.Type,
 		}
 
-		var cookieDomain string
-		if isReleaseVersion {
-			cookieDomain = "*.trainingclubapp.com"
-		} else {
-			cookieDomain = "localhost"
-		}
-
 		_, err = database.SetCacheValue(database.RedisClientParams{
 			RedisClient: controller.RedisCache,
 		}, refreshToken, account.ID.Hex(), refreshTokenTTL)
@@ -137,7 +130,24 @@ func (controller *AresController) AuthenticateStandardCredentials() gin.HandlerF
 			return
 		}
 
-		ctx.SetCookie("refresh_token", refreshToken, refreshTokenTTL*60*60, "/", cookieDomain, true, false)
+		var cookieDomain string
+		if isReleaseVersion {
+			cookieDomain = "*.trainingclubapp.com"
+		} else {
+			cookieDomain = ".localhost"
+		}
+
+		ctx.SetSameSite(http.SameSiteNoneMode)
+		ctx.SetCookie(
+			"refresh_token",
+			refreshToken,
+			refreshTokenTTL*60*60,
+			"/",
+			cookieDomain,
+			true,
+			true,
+		)
+
 		ctx.JSON(http.StatusOK, gin.H{"account": basic, "token": accessToken})
 	}
 }

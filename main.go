@@ -45,16 +45,25 @@ func main() {
 	// cors specific
 	corsConfig := cors.DefaultConfig()
 
-	if conf.Gin.Mode == "release" {
-		corsConfig.AllowOrigins = []string{"https://www.trainingclubapp.com", "https://trainingclubapp.com", "http://localhost"}
-	} else {
-		corsConfig.AllowAllOrigins = true
+	corsConfig.AllowAllOrigins = true
+	corsConfig.AllowCredentials = true
+	corsConfig.AllowMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"}
+	corsConfig.ExposeHeaders = []string{"Set-Cookie", "Content-Length"}
+	corsConfig.AllowHeaders = []string{
+		"Authorization",
+		"Origin",
+		"Token",
+		"Content-Type",
+		"Content-Length",
+		"Accept-Encoding",
+		"X-CSRF-Token",
+		"accept",
+		"origin",
+		"Cache-Control",
+		"X-Requested-With",
+		"Set-Cookie",
 	}
 
-	corsConfig.AllowMethods = []string{"GET", "POST", "PUT", "DELETE", "HEAD"}
-	corsConfig.AllowHeaders = []string{"Authorization", "Origin", "Token", "Content-Type"}
-	corsConfig.ExposeHeaders = []string{"Set-Cookie", "Content-Length"}
-	corsConfig.AllowCredentials = true
 	router.Use(cors.New(corsConfig))
 
 	routing.ApplyRoutes(router, mongoClient, s3Client, redisClient)
