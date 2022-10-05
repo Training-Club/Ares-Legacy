@@ -141,7 +141,7 @@ func (controller *AresController) AuthenticateStandardCredentials() gin.HandlerF
 		ctx.SetCookie(
 			"refresh_token",
 			refreshToken,
-			refreshTokenTTL*60*60,
+			refreshTokenTTL,
 			"/",
 			cookieDomain,
 			true,
@@ -154,19 +154,24 @@ func (controller *AresController) AuthenticateStandardCredentials() gin.HandlerF
 
 // RefreshToken takes an existing refresh_token from the query params
 // and performs the following comparisons:
-//		- Verify that the token is a valid JWT
-//		- Query Redis Cache by Refresh Token for accountId value
-//		- Verify that the accountId belongs to an existing account
-//		- Generates a new access_token and returns in a success 200 response
+//   - Verify that the token is a valid JWT
+//   - Query Redis Cache by Refresh Token for accountId value
+//   - Verify that the accountId belongs to an existing account
+//   - Generates a new access_token and returns in a success 200 response
 func (controller *AresController) RefreshToken() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		conf := config.Get()
 		accessTokenPublicKey := conf.Auth.AccessTokenPublicKey
 		accessTokenTTL := conf.Auth.AccessTokenTTL
 		refreshPublicKey := conf.Auth.RefreshTokenPublicKey
-		refreshToken := ctx.Param("refreshToken")
 
-		_, err := middleware.ValidateToken(refreshToken, refreshPublicKey)
+		refreshToken, err := ctx.Cookie("refresh_token")
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "failed to read refresh_token cookie"})
+			return
+		}
+
+		_, err = middleware.ValidateToken(refreshToken, refreshPublicKey)
 		if err != nil {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "failed to unmarshal refresh token"})
 			return
@@ -213,9 +218,13 @@ func (controller *AresController) Logout() gin.HandlerFunc {
 	refreshPublicKey := conf.Auth.RefreshTokenPublicKey
 
 	return func(ctx *gin.Context) {
-		refreshToken := ctx.Param("refreshToken")
-		_, err := middleware.ValidateToken(refreshToken, refreshPublicKey)
+		refreshToken, err := ctx.Cookie("refresh_token")
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "failed to read refresh_token cookie"})
+			return
+		}
 
+		_, err = middleware.ValidateToken(refreshToken, refreshPublicKey)
 		if err != nil {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "failed to unmarshal refresh token"})
 			return

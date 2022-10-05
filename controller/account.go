@@ -124,7 +124,8 @@ func (controller *AresController) GetAccountAvailability() gin.HandlerFunc {
 // pair provided through parameters and in the query itself.
 //
 // key = passed as a parameter, as this function is called from within the
-// 		 router itself.
+//
+//	router itself.
 func (controller *AresController) GetAccount(key string) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		v := ctx.Param("value")
@@ -382,13 +383,6 @@ func (controller *AresController) CreateStandardAccount() gin.HandlerFunc {
 			Type:     model.AccountType("standard"),
 		}
 
-		var cookieDomain string
-		if isReleaseVersion {
-			cookieDomain = "*.trainingclubapp.com"
-		} else {
-			cookieDomain = ".localhost"
-		}
-
 		_, err = database.SetCacheValue(database.RedisClientParams{
 			RedisClient: controller.RedisCache,
 		}, refreshToken, id, refreshTokenTTL)
@@ -397,11 +391,18 @@ func (controller *AresController) CreateStandardAccount() gin.HandlerFunc {
 			return
 		}
 
+		var cookieDomain string
+		if isReleaseVersion {
+			cookieDomain = "*.trainingclubapp.com"
+		} else {
+			cookieDomain = ".localhost"
+		}
+
 		ctx.SetSameSite(http.SameSiteNoneMode)
 		ctx.SetCookie(
 			"refresh_token",
 			refreshToken,
-			refreshTokenTTL*60*60,
+			refreshTokenTTL,
 			"/",
 			cookieDomain,
 			true,

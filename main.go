@@ -45,7 +45,16 @@ func main() {
 	// cors specific
 	corsConfig := cors.DefaultConfig()
 
-	corsConfig.AllowAllOrigins = true
+	corsConfig.AllowOrigins = []string{
+		"http://localhost",
+		"http://localhost:8080",
+		"http://localhost:3000",
+		"https://trainingclubapp.com",
+		"https://api.trainingclubapp.com",
+		"http://api.example.com",
+		"http://example.com",
+	}
+
 	corsConfig.AllowCredentials = true
 	corsConfig.AllowMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"}
 	corsConfig.ExposeHeaders = []string{"Set-Cookie", "Content-Length"}

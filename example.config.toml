@@ -6,7 +6,7 @@ port = "8080"
 accessTokenPubKey = "trainingclub123456789"
 accessTokenTTL = 10
 refreshTokenPubKey = "trainingclub987654321"
-refreshTokenTTL = 525600
+refreshTokenTTL = 31536000
 
 [mongo]
 uri = "mongodb://mongodb:27017/prod"
