@@ -216,6 +216,7 @@ func (controller *AresController) RefreshToken() gin.HandlerFunc {
 func (controller *AresController) Logout() gin.HandlerFunc {
 	conf := config.Get()
 	refreshPublicKey := conf.Auth.RefreshTokenPublicKey
+	isReleaseVersion := conf.Gin.Mode == "release"
 
 	return func(ctx *gin.Context) {
 		refreshToken, err := ctx.Cookie("refresh_token")
@@ -238,6 +239,23 @@ func (controller *AresController) Logout() gin.HandlerFunc {
 			ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"message": "failed to delete from cache"})
 			return
 		}
+
+		var cookieDomain string
+		if isReleaseVersion {
+			cookieDomain = "*.trainingclubapp.com"
+		} else {
+			cookieDomain = ".localhost"
+		}
+
+		ctx.SetCookie(
+			"refresh_token",
+			refreshToken,
+			-1,
+			"/",
+			cookieDomain,
+			true,
+			true,
+		)
 
 		ctx.Status(http.StatusOK)
 	}
