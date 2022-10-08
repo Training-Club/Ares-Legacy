@@ -530,6 +530,25 @@ func (controller *AresController) SetAccountLastSeen() gin.HandlerFunc {
 	}
 }
 
+// GetAccountCount returns an estimated count of documents in the
+// accounts collection and returns it in a success 200
+func (controller *AresController) GetAccountCount() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		count, err := database.Count(database.QueryParams{
+			MongoClient:    controller.DB,
+			DatabaseName:   controller.DatabaseName,
+			CollectionName: controller.CollectionName,
+		}, bson.M{})
+
+		if err != nil {
+			ctx.JSON(http.StatusOK, gin.H{"result": 0})
+			return
+		}
+
+		ctx.JSON(http.StatusOK, gin.H{"result": count})
+	}
+}
+
 // DeleteAccount will remove an account from the account database and
 // transfer it to the deleted collection. Along with the account itself,
 // a deleted account struct contains the time it will expire and need to
@@ -590,24 +609,5 @@ func (controller *AresController) DeleteAccount() gin.HandlerFunc {
 		}
 
 		ctx.JSON(http.StatusOK, gin.H{"deletedId": deletedId})
-	}
-}
-
-// GetAccountCount returns an estimated count of documents in the
-// accounts collection and returns it in a success 200
-func (controller *AresController) GetAccountCount() gin.HandlerFunc {
-	return func(ctx *gin.Context) {
-		count, err := database.Count(database.QueryParams{
-			MongoClient:    controller.DB,
-			DatabaseName:   controller.DatabaseName,
-			CollectionName: controller.CollectionName,
-		}, bson.M{})
-
-		if err != nil {
-			ctx.JSON(http.StatusOK, gin.H{"result": 0})
-			return
-		}
-
-		ctx.JSON(http.StatusOK, gin.H{"result": count})
 	}
 }
