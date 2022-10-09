@@ -1,3 +1,6 @@
+[ares]
+createAdminAccount = true
+
 [gin]
 mode = "dev"
 port = "8080"

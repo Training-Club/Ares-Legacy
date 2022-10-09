@@ -4,6 +4,7 @@ import (
 	"ares/config"
 	"ares/database"
 	"ares/routing"
+	"ares/util"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
@@ -74,6 +75,8 @@ func main() {
 	}
 
 	router.Use(cors.New(corsConfig))
+
+	util.ConfigureAdminAccount(mongoClient, "prod", "account")
 
 	routing.ApplyRoutes(router, mongoClient, s3Client, redisClient)
 

@@ -161,6 +161,13 @@ func (controller *AresController) CreateBlog() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		var params Params
 		authorId := ctx.GetString("accountId")
+		attachedPermissions := ctx.Keys["attachedPermissions"].([]model.Permission)
+
+		hasPermission := util.ContainsPerm(model.AUTHOR_BLOGS, attachedPermissions)
+		if !hasPermission {
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "insufficient permissions"})
+			return
+		}
 
 		err := ctx.ShouldBindJSON(&params)
 		if err != nil {
@@ -211,6 +218,13 @@ func (controller *AresController) UpdateBlog() gin.HandlerFunc {
 
 	return func(ctx *gin.Context) {
 		var blog model.BlogPost
+		attachedPermissions := ctx.Keys["attachedPermissions"].([]model.Permission)
+
+		hasPermission := util.ContainsPerm(model.AUTHOR_BLOGS, attachedPermissions)
+		if !hasPermission {
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "insufficient permissions"})
+			return
+		}
 
 		err := ctx.ShouldBindJSON(&blog)
 		if err != nil {
@@ -255,6 +269,14 @@ func (controller *AresController) DeleteBlog() gin.HandlerFunc {
 
 	return func(ctx *gin.Context) {
 		blogId := ctx.Param("id")
+		attachedPermissions := ctx.Keys["attachedPermissions"].([]model.Permission)
+
+		hasPermission := util.ContainsPerm(model.AUTHOR_BLOGS, attachedPermissions)
+		if !hasPermission {
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "insufficient permissions"})
+			return
+		}
+
 		blogIdHex, err := primitive.ObjectIDFromHex(blogId)
 		if err != nil {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "blog id must be hex"})

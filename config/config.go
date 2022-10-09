@@ -7,11 +7,16 @@ import (
 )
 
 type Configuration struct {
+	Ares  Ares  `toml:"ares"`
 	Gin   Gin   `toml:"gin"`
 	Auth  Auth  `toml:"auth"`
 	Mongo Mongo `toml:"mongo"`
 	Redis Redis `toml:"redis"`
 	S3    S3    `toml:"s3"`
+}
+
+type Ares struct {
+	CreateAdminAccount bool `toml:"createAdminAccount"`
 }
 
 type Gin struct {
