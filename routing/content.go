@@ -10,24 +10,33 @@ import (
 )
 
 func ApplyContentRoutes(router *gin.Engine, mongoClient *mongo.Client, s3Client *s3.Client) {
+	const DATABASE_NAME string = "prod"
+
 	conf := config.Get()
 
 	postCtrl := controller.AresController{
 		DB:             mongoClient,
-		DatabaseName:   "prod",
+		DatabaseName:   DATABASE_NAME,
 		CollectionName: "post",
 	}
 
 	commentCtrl := controller.AresController{
 		DB:             mongoClient,
-		DatabaseName:   "prod",
+		DatabaseName:   DATABASE_NAME,
 		CollectionName: "comment",
 	}
 
 	likeCtrl := controller.AresController{
 		DB:             mongoClient,
-		DatabaseName:   "prod",
+		DatabaseName:   DATABASE_NAME,
 		CollectionName: "like",
+	}
+
+	permissionHandler := middleware.PermissionMiddlewareHandler{
+		MongoClient:           mongoClient,
+		DatabaseName:          DATABASE_NAME,
+		RoleCollectionName:    "role",
+		AccountCollectionName: "account",
 	}
 
 	v1 := router.Group("/v1/content")
@@ -36,7 +45,7 @@ func ApplyContentRoutes(router *gin.Engine, mongoClient *mongo.Client, s3Client 
 	}
 
 	v1Authorized := router.Group("/v1/content")
-	v1Authorized.Use(middleware.ValidateRequest())
+	v1Authorized.Use(middleware.ValidateRequest(), permissionHandler.AttachPermissions())
 	{
 		// get post objects
 		v1Authorized.GET("/post/id/:id", postCtrl.GetPostByID())

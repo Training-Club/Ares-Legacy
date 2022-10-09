@@ -9,10 +9,19 @@ import (
 )
 
 func ApplyAccountRoutes(router *gin.Engine, mongoClient *mongo.Client) {
+	const DATABASE_NAME string = "prod"
+
 	ctrl := controller.AresController{
 		DB:             mongoClient,
 		CollectionName: "account",
-		DatabaseName:   "prod",
+		DatabaseName:   DATABASE_NAME,
+	}
+
+	permissionHandler := middleware.PermissionMiddlewareHandler{
+		MongoClient:           mongoClient,
+		DatabaseName:          DATABASE_NAME,
+		RoleCollectionName:    "role",
+		AccountCollectionName: "account",
 	}
 
 	v1 := router.Group("/v1/account")
@@ -26,7 +35,7 @@ func ApplyAccountRoutes(router *gin.Engine, mongoClient *mongo.Client) {
 	}
 
 	v1Authorized := router.Group("/v1/account")
-	v1Authorized.Use(middleware.ValidateRequest())
+	v1Authorized.Use(middleware.ValidateRequest(), permissionHandler.AttachPermissions())
 	{
 		v1Authorized.GET("/username/:value", ctrl.GetAccount("username"))
 		v1Authorized.GET("/id/:value", ctrl.GetAccount("id"))

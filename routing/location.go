@@ -8,14 +8,23 @@ import (
 )
 
 func ApplyLocationRoutes(router *gin.Engine, mongoClient *mongo.Client) {
+	const DATABASE_NAME string = "prod"
+
 	ctrl := controller.AresController{
 		DB:             mongoClient,
 		CollectionName: "location",
 		DatabaseName:   "prod",
 	}
 
+	permissionHandler := middleware.PermissionMiddlewareHandler{
+		MongoClient:           mongoClient,
+		DatabaseName:          DATABASE_NAME,
+		RoleCollectionName:    "role",
+		AccountCollectionName: "account",
+	}
+
 	v1Authorized := router.Group("/v1/location")
-	v1Authorized.Use(middleware.ValidateRequest())
+	v1Authorized.Use(middleware.ValidateRequest(), permissionHandler.AttachPermissions())
 	{
 		v1Authorized.GET("/id/:id", ctrl.GetLocationById())
 		v1Authorized.GET("/search", ctrl.GetLocationsByQuery())

@@ -6,16 +6,18 @@ import (
 )
 
 type Account struct {
-	ID          primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
-	Username    string             `json:"username,omitempty" bson:"username,omitempty" binding:"required"`
-	Email       string             `json:"email,omitempty" bson:"email,omitempty" binding:"required"`
-	Password    string             `json:"password,omitempty" bson:"password,omitempty"`
-	CreatedAt   time.Time          `json:"createdAt,omitempty" bson:"createdAt,omitempty" binding:"required"`
-	LastSeen    time.Time          `json:"lastSeen,omitempty" bson:"lastSeen,omitempty" binding:"required"`
-	Type        AccountType        `json:"accountType,omitempty" bson:"accountType,omitempty" binding:"required"`
-	Profile     Profile            `json:"profile,omitempty" bson:"profile,omitempty"`
-	Biometrics  Biometrics         `json:"biometrics,omitempty" bson:"biometrics,omitempty"`
-	Preferences Preferences        `json:"preferences,omitempty" bson:"preferences,omitempty"`
+	ID          primitive.ObjectID   `json:"id,omitempty" bson:"_id,omitempty"`
+	Username    string               `json:"username,omitempty" bson:"username,omitempty" binding:"required"`
+	Email       string               `json:"email,omitempty" bson:"email,omitempty" binding:"required"`
+	Password    string               `json:"password,omitempty" bson:"password,omitempty"`
+	CreatedAt   time.Time            `json:"createdAt,omitempty" bson:"createdAt,omitempty" binding:"required"`
+	LastSeen    time.Time            `json:"lastSeen,omitempty" bson:"lastSeen,omitempty" binding:"required"`
+	Type        AccountType          `json:"accountType,omitempty" bson:"accountType,omitempty" binding:"required"`
+	Profile     Profile              `json:"profile,omitempty" bson:"profile,omitempty"`
+	Biometrics  Biometrics           `json:"biometrics,omitempty" bson:"biometrics,omitempty"`
+	Preferences Preferences          `json:"preferences,omitempty" bson:"preferences,omitempty"`
+	Roles       []primitive.ObjectID `json:"roles,omitempty" bson:"roles,omitempty"`
+	Permissions []Permission         `json:"permissions,omitempty" bson:"permissions,omitempty"`
 }
 
 type Profile struct {

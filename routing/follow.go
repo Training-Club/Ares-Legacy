@@ -7,16 +7,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-/*
-
-	RETURN TRUE IF ACCOUNT ID FOLLOWING ACCOUNT ID DONE
-	RETURN FOLLOWER COUNT FOR ACCOUNT ID DONE
-	RETURN FOLLOWING COUNT FOR ACCOUNT ID DONE
-	RETURN FOLLOWING ARRAY LIST (PAGINATED) FOR ACCOUNT ID DONE
-	RETURN FOLLOWER ARRAY LIST (PAGINATED) FOR ACCOUNT ID DONE
-
-*/
-
 func ApplyFollowRoutes(router *gin.Engine, mongoClient *mongo.Client) {
 	ctrl := controller.AresController{
 		DB:             mongoClient,
