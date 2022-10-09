@@ -1,8 +1,10 @@
 package controller
 
 import (
+	"ares/audit"
 	"ares/database"
 	"ares/model"
+	"fmt"
 	"net/http"
 	"reflect"
 
@@ -129,7 +131,14 @@ func (controller *AresController) CreateExerciseInfo() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		var params Params
 
-		err := ctx.ShouldBindJSON(&params)
+		accountId := ctx.GetString("accountId")
+		accountIdHex, err := primitive.ObjectIDFromHex(accountId)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "failed to unmarshal account id"})
+			return
+		}
+
+		err = ctx.ShouldBindJSON(&params)
 		if err != nil {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "failed to unmarshal parameters"})
 			return
@@ -158,6 +167,18 @@ func (controller *AresController) CreateExerciseInfo() gin.HandlerFunc {
 		if err != nil {
 			ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "failed to insert document"})
 			return
+		}
+
+		err = audit.CreateAndSaveEntry(audit.CreateEntryParams{
+			MongoClient: controller.DB,
+			Initiator:   accountIdHex,
+			IP:          ctx.ClientIP(),
+			EventName:   audit.CREATE_EXERCISE,
+			Context:     []string{"exercise id: " + inserted + " exercise name: " + params.Name},
+		})
+
+		if err != nil {
+			fmt.Println("failed to save audit entry: ", err)
 		}
 
 		ctx.JSON(http.StatusOK, gin.H{"message": inserted})

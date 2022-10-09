@@ -1,12 +1,15 @@
 package controller
 
 import (
+	"ares/audit"
 	"ares/config"
 	"ares/database"
 	"ares/middleware"
 	"ares/model"
 	"ares/util"
+	"fmt"
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/crypto/bcrypt"
 	"net/http"
@@ -41,6 +44,17 @@ func (controller *AresController) AuthenticateWithToken() gin.HandlerFunc {
 			Username: account.Username,
 			Email:    account.Email,
 			Type:     account.Type,
+		}
+
+		err = audit.CreateAndSaveEntry(audit.CreateEntryParams{
+			MongoClient: controller.DB,
+			Initiator:   account.ID,
+			IP:          ctx.ClientIP(),
+			EventName:   audit.AUTH_WITH_TOKEN,
+		})
+
+		if err != nil {
+			fmt.Println("failed to save audit entry: ", err)
 		}
 
 		ctx.JSON(http.StatusOK, basic)
@@ -137,6 +151,17 @@ func (controller *AresController) AuthenticateStandardCredentials() gin.HandlerF
 			cookieDomain = ".localhost"
 		}
 
+		err = audit.CreateAndSaveEntry(audit.CreateEntryParams{
+			MongoClient: controller.DB,
+			Initiator:   account.ID,
+			IP:          ctx.ClientIP(),
+			EventName:   audit.AUTH_WITH_CREDENTIALS,
+		})
+
+		if err != nil {
+			fmt.Println("failed to save audit entry: ", err)
+		}
+
 		ctx.SetSameSite(http.SameSiteNoneMode)
 		ctx.SetCookie(
 			"refresh_token",
@@ -207,6 +232,20 @@ func (controller *AresController) RefreshToken() gin.HandlerFunc {
 			return
 		}
 
+		accountIdHex, err := primitive.ObjectIDFromHex(accountId)
+		if err == nil {
+			err = audit.CreateAndSaveEntry(audit.CreateEntryParams{
+				MongoClient: controller.DB,
+				Initiator:   accountIdHex,
+				IP:          ctx.ClientIP(),
+				EventName:   audit.REQUEST_REFRESH_TOKEN,
+			})
+
+			if err != nil {
+				fmt.Println("failed to save audit entry: ", err)
+			}
+		}
+
 		ctx.JSON(http.StatusOK, gin.H{"access_token": newAccessToken})
 	}
 }
@@ -219,6 +258,7 @@ func (controller *AresController) Logout() gin.HandlerFunc {
 	isReleaseVersion := conf.Gin.Mode == "release"
 
 	return func(ctx *gin.Context) {
+		accountId := ctx.GetString("accountId")
 		refreshToken, err := ctx.Cookie("refresh_token")
 		if err != nil {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "failed to read refresh_token cookie"})
@@ -245,6 +285,20 @@ func (controller *AresController) Logout() gin.HandlerFunc {
 			cookieDomain = "*.trainingclubapp.com"
 		} else {
 			cookieDomain = ".localhost"
+		}
+
+		accountIdHex, err := primitive.ObjectIDFromHex(accountId)
+		if err == nil {
+			err = audit.CreateAndSaveEntry(audit.CreateEntryParams{
+				MongoClient: controller.DB,
+				Initiator:   accountIdHex,
+				IP:          ctx.ClientIP(),
+				EventName:   audit.LOGOUT,
+			})
+
+			if err != nil {
+				fmt.Println("failed to save audit entry: ", err)
+			}
 		}
 
 		ctx.SetCookie(

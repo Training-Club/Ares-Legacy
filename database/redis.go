@@ -28,6 +28,10 @@ func GetRedisClient(address string, password string, db int) (*redis.Client, err
 // SetCacheValue accepts Redis Client Params, a string key, and a value
 // to insert in to the cache
 func SetCacheValue[K any](params RedisClientParams, key string, value K, ttl int) (string, error) {
+	if params.RedisClient == nil {
+		panic("attempted to access redis client but was nil")
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
@@ -38,6 +42,10 @@ func SetCacheValue[K any](params RedisClientParams, key string, value K, ttl int
 // GetCacheValue queries and returns the value corresponding to the provided
 // key string
 func GetCacheValue(params RedisClientParams, key string) (string, error) {
+	if params.RedisClient == nil {
+		panic("attempted to access redis client but was nil")
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
@@ -47,6 +55,10 @@ func GetCacheValue(params RedisClientParams, key string) (string, error) {
 
 // DeleteCacheValue queries and removes a key from the cache
 func DeleteCacheValue(params RedisClientParams, key string) (int64, error) {
+	if params.RedisClient == nil {
+		panic("attempted to access redis client but was nil")
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 

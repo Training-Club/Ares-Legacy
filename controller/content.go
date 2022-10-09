@@ -1,9 +1,11 @@
 package controller
 
 import (
+	"ares/audit"
 	"ares/database"
 	"ares/model"
 	"ares/util"
+	"fmt"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
@@ -384,6 +386,18 @@ func (controller *AresController) CreatePost(s3Client *s3.Client, bucket string)
 			return
 		}
 
+		err = audit.CreateAndSaveEntry(audit.CreateEntryParams{
+			MongoClient: controller.DB,
+			Initiator:   authorHex,
+			IP:          ctx.ClientIP(),
+			EventName:   audit.CREATE_POST,
+			Context:     []string{"post id: " + inserted},
+		})
+
+		if err != nil {
+			fmt.Println("failed to save audit entry: ", err)
+		}
+
 		ctx.JSON(http.StatusCreated, gin.H{"message": inserted})
 	}
 }
@@ -457,6 +471,18 @@ func (controller *AresController) CreateComment() gin.HandlerFunc {
 		if err != nil {
 			ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "failed to insert comment document"})
 			return
+		}
+
+		err = audit.CreateAndSaveEntry(audit.CreateEntryParams{
+			MongoClient: controller.DB,
+			Initiator:   authorIdHex,
+			IP:          ctx.ClientIP(),
+			EventName:   audit.CREATE_COMMENT,
+			Context:     []string{"comment id: " + inserted, "content: " + params.Text},
+		})
+
+		if err != nil {
+			fmt.Println("failed to save audit entry: ", err)
 		}
 
 		ctx.JSON(http.StatusCreated, gin.H{"message": inserted})
@@ -649,6 +675,18 @@ func (controller *AresController) UpdatePost() gin.HandlerFunc {
 			return
 		}
 
+		err = audit.CreateAndSaveEntry(audit.CreateEntryParams{
+			MongoClient: controller.DB,
+			Initiator:   post.Author,
+			IP:          ctx.ClientIP(),
+			EventName:   audit.UPDATE_POST,
+			Context:     []string{"post id: " + post.ID.Hex()},
+		})
+
+		if err != nil {
+			fmt.Println("failed to save audit entry: ", err)
+		}
+
 		ctx.Status(http.StatusOK)
 	}
 }
@@ -693,7 +731,38 @@ func (controller *AresController) UpdateComment() gin.HandlerFunc {
 			return
 		}
 
+		err = audit.CreateAndSaveEntry(audit.CreateEntryParams{
+			MongoClient: controller.DB,
+			Initiator:   comment.Author,
+			IP:          ctx.ClientIP(),
+			EventName:   audit.UPDATE_COMMENT,
+			Context:     []string{"comment id: " + comment.ID.Hex() + " content: " + comment.Text},
+		})
+
+		if err != nil {
+			fmt.Println("failed to save audit entry: ", err)
+		}
+
 		ctx.Status(http.StatusOK)
+	}
+}
+
+// GetPostCount returns an estimated count of documents in the
+// post collection and returns it in a success 200
+func (controller *AresController) GetPostCount() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		count, err := database.Count(database.QueryParams{
+			MongoClient:    controller.DB,
+			DatabaseName:   controller.DatabaseName,
+			CollectionName: controller.CollectionName,
+		}, bson.M{})
+
+		if err != nil {
+			ctx.JSON(http.StatusOK, gin.H{"result": 0})
+			return
+		}
+
+		ctx.JSON(http.StatusOK, gin.H{"result": count})
 	}
 }
 
@@ -762,6 +831,18 @@ func (controller *AresController) DeletePost() gin.HandlerFunc {
 		if deleteResult.DeletedCount <= 0 || err != nil {
 			ctx.AbortWithStatus(http.StatusInternalServerError)
 			return
+		}
+
+		err = audit.CreateAndSaveEntry(audit.CreateEntryParams{
+			MongoClient: controller.DB,
+			Initiator:   accountIdHex,
+			IP:          ctx.ClientIP(),
+			EventName:   audit.DELETE_POST,
+			Context:     []string{"post id: " + existingPost.ID.Hex()},
+		})
+
+		if err != nil {
+			fmt.Println("failed to save audit entry: ", err)
 		}
 
 		ctx.Status(http.StatusOK)
@@ -833,25 +914,18 @@ func (controller *AresController) DeleteComment() gin.HandlerFunc {
 			return
 		}
 
-		ctx.Status(http.StatusOK)
-	}
-}
-
-// GetPostCount returns an estimated count of documents in the
-// post collection and returns it in a success 200
-func (controller *AresController) GetPostCount() gin.HandlerFunc {
-	return func(ctx *gin.Context) {
-		count, err := database.Count(database.QueryParams{
-			MongoClient:    controller.DB,
-			DatabaseName:   controller.DatabaseName,
-			CollectionName: controller.CollectionName,
-		}, bson.M{})
+		err = audit.CreateAndSaveEntry(audit.CreateEntryParams{
+			MongoClient: controller.DB,
+			Initiator:   accountIdHex,
+			IP:          ctx.ClientIP(),
+			EventName:   audit.DELETE_COMMENT,
+			Context:     []string{"comment id: " + existingComment.ID.Hex()},
+		})
 
 		if err != nil {
-			ctx.JSON(http.StatusOK, gin.H{"result": 0})
-			return
+			fmt.Println("failed to save audit entry: ", err)
 		}
 
-		ctx.JSON(http.StatusOK, gin.H{"result": count})
+		ctx.Status(http.StatusOK)
 	}
 }

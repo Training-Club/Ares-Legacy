@@ -1,9 +1,11 @@
 package controller
 
 import (
+	"ares/audit"
 	"ares/database"
 	"ares/model"
 	"ares/util"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -222,6 +224,18 @@ func (controller *AresController) CreateLocation() gin.HandlerFunc {
 			return
 		}
 
+		err = audit.CreateAndSaveEntry(audit.CreateEntryParams{
+			MongoClient: controller.DB,
+			Initiator:   accountIdHex,
+			IP:          ctx.ClientIP(),
+			EventName:   audit.CREATE_LOCATION,
+			Context:     []string{"location id: " + inserted, "location name: " + location.Name},
+		})
+
+		if err != nil {
+			fmt.Println("failed to save audit entry: ", err)
+		}
+
 		ctx.JSON(http.StatusCreated, gin.H{"message": inserted})
 	}
 }
@@ -305,6 +319,18 @@ func (controller *AresController) UpdateLocation() gin.HandlerFunc {
 			return
 		}
 
+		err = audit.CreateAndSaveEntry(audit.CreateEntryParams{
+			MongoClient: controller.DB,
+			Initiator:   existing.Author,
+			IP:          ctx.ClientIP(),
+			EventName:   audit.UPDATE_LOCATION,
+			Context:     []string{"location id: " + existing.ID.Hex(), "location name: " + existing.Name},
+		})
+
+		if err != nil {
+			fmt.Println("failed to save audit entry: ", err)
+		}
+
 		ctx.Status(http.StatusAccepted)
 	}
 }
@@ -373,6 +399,18 @@ func (controller *AresController) DeleteLocation() gin.HandlerFunc {
 		if deleteResult.DeletedCount <= 0 || err != nil {
 			ctx.AbortWithStatus(http.StatusInternalServerError)
 			return
+		}
+
+		err = audit.CreateAndSaveEntry(audit.CreateEntryParams{
+			MongoClient: controller.DB,
+			Initiator:   existing.Author,
+			IP:          ctx.ClientIP(),
+			EventName:   audit.DELETE_LOCATION,
+			Context:     []string{"location id: " + existing.ID.Hex(), "location name: " + existing.Name},
+		})
+
+		if err != nil {
+			fmt.Println("failed to save audit entry: ", err)
 		}
 
 		ctx.Status(http.StatusOK)

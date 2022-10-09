@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"ares/audit"
 	"ares/config"
 	"ares/database"
 	"ares/model"
@@ -398,6 +399,21 @@ func (controller *AresController) CreateStandardAccount() gin.HandlerFunc {
 			cookieDomain = ".localhost"
 		}
 
+		idHex, err := primitive.ObjectIDFromHex(id)
+		if err == nil {
+			err = audit.CreateAndSaveEntry(audit.CreateEntryParams{
+				MongoClient: controller.DB,
+				Initiator:   idHex,
+				IP:          ctx.ClientIP(),
+				EventName:   audit.CREATE_ACCOUNT,
+				Context:     []string{"email: " + params.Email, "username: " + params.Username},
+			})
+
+			if err != nil {
+				fmt.Println("failed to save audit entry: ", err)
+			}
+		}
+
 		ctx.SetSameSite(http.SameSiteNoneMode)
 		ctx.SetCookie(
 			"refresh_token",
@@ -489,6 +505,17 @@ func (controller *AresController) UpdateAccount(id string) gin.HandlerFunc {
 		if updated <= 0 {
 			ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "updated document count returned as zero"})
 			return
+		}
+
+		err = audit.CreateAndSaveEntry(audit.CreateEntryParams{
+			MongoClient: controller.DB,
+			Initiator:   account.ID,
+			IP:          ctx.ClientIP(),
+			EventName:   audit.UPDATE_ACCOUNT,
+		})
+
+		if err != nil {
+			fmt.Println("failed to save audit entry: ", err)
 		}
 
 		ctx.Status(http.StatusOK)
@@ -606,6 +633,18 @@ func (controller *AresController) DeleteAccount() gin.HandlerFunc {
 		if deleteResult.DeletedCount <= 0 {
 			ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"message": "account delete result returned as zero"})
 			return
+		}
+
+		err = audit.CreateAndSaveEntry(audit.CreateEntryParams{
+			MongoClient: controller.DB,
+			Initiator:   account.ID,
+			IP:          ctx.ClientIP(),
+			EventName:   audit.DELETE_ACCOUNT,
+			Context:     []string{"deleted id: " + deletedId},
+		})
+
+		if err != nil {
+			fmt.Println("failed to save audit entry: ", err)
 		}
 
 		ctx.JSON(http.StatusOK, gin.H{"deletedId": deletedId})

@@ -1,9 +1,11 @@
 package controller
 
 import (
+	"ares/audit"
 	"ares/database"
 	"ares/model"
 	"ares/util"
+	"fmt"
 	"net/http"
 	"reflect"
 	"strconv"
@@ -169,6 +171,18 @@ func (controller *AresController) CreateExerciseSession() gin.HandlerFunc {
 			return
 		}
 
+		err = audit.CreateAndSaveEntry(audit.CreateEntryParams{
+			MongoClient: controller.DB,
+			Initiator:   params.Author,
+			IP:          ctx.ClientIP(),
+			EventName:   audit.CREATE_TRAINING_SESSION,
+			Context:     []string{"session id: " + inserted},
+		})
+
+		if err != nil {
+			fmt.Println("failed to save audit entry: ", err)
+		}
+
 		ctx.JSON(http.StatusOK, gin.H{"message": inserted})
 	}
 }
@@ -248,6 +262,18 @@ func (controller *AresController) DeleteExerciseSession() gin.HandlerFunc {
 		if deleteResult.DeletedCount <= 0 {
 			ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"message": "session delete count is zero"})
 			return
+		}
+
+		err = audit.CreateAndSaveEntry(audit.CreateEntryParams{
+			MongoClient: controller.DB,
+			Initiator:   session.Author,
+			IP:          ctx.ClientIP(),
+			EventName:   audit.DELETE_TRAINING_SESSION,
+			Context:     []string{"session id: " + session.ID.Hex()},
+		})
+
+		if err != nil {
+			fmt.Println("failed to save audit entry: ", err)
 		}
 
 		ctx.JSON(http.StatusOK, gin.H{"deletedId": deletedId})
