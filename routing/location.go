@@ -13,7 +13,7 @@ func ApplyLocationRoutes(router *gin.Engine, mongoClient *mongo.Client) {
 	ctrl := controller.AresController{
 		DB:             mongoClient,
 		CollectionName: "location",
-		DatabaseName:   "prod",
+		DatabaseName:   DATABASE_NAME,
 	}
 
 	permissionHandler := middleware.PermissionMiddlewareHandler{
