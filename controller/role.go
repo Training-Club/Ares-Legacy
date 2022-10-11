@@ -114,6 +114,7 @@ func (controller *AresController) CreateRole() gin.HandlerFunc {
 		}
 
 		attachedPermissions := ctx.Keys["attachedPermissions"].([]model.Permission)
+		fmt.Println(attachedPermissions)
 
 		if !util.ContainsPerm(model.GRANT_ROLES, attachedPermissions) {
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "insufficient permissions"})
@@ -271,6 +272,7 @@ func (controller *AresController) DeleteRole() gin.HandlerFunc {
 	}
 }
 
+// GrantRole grants a role for an account
 func (controller *AresController) GrantRole() gin.HandlerFunc {
 	accountDbQueryParams := database.QueryParams{
 		MongoClient:    controller.DB,
@@ -381,6 +383,7 @@ func (controller *AresController) GrantRole() gin.HandlerFunc {
 	}
 }
 
+// RevokeRole revokes a role from an account
 func (controller *AresController) RevokeRole() gin.HandlerFunc {
 	accountDbQueryParams := database.QueryParams{
 		MongoClient:    controller.DB,
@@ -499,14 +502,168 @@ func (controller *AresController) RevokeRole() gin.HandlerFunc {
 	}
 }
 
+// GrantRolePermission grants a specific role a specific permission
 func (controller *AresController) GrantRolePermission() gin.HandlerFunc {
-	return func(ctx *gin.Context) {
+	roleDbQueryParams := database.QueryParams{
+		MongoClient:    controller.DB,
+		DatabaseName:   controller.DatabaseName,
+		CollectionName: controller.CollectionName,
+	}
 
+	return func(ctx *gin.Context) {
+		attachedPermissions := ctx.Keys["attachedPermissions"].([]model.Permission)
+		if !util.ContainsPerm(model.GRANT_ROLES, attachedPermissions) {
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "insufficient permissions"})
+			return
+		}
+
+		accountId := ctx.GetString("accountId")
+		accountIdHex, err := primitive.ObjectIDFromHex(accountId)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "failed to unmarshal account id"})
+			return
+		}
+
+		roleId := ctx.Param("roleId")
+		roleIdHex, err := primitive.ObjectIDFromHex(roleId)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "failed to unmarshal role id"})
+			return
+		}
+
+		var permission model.Permission
+		err = ctx.ShouldBind(&permission)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "invalid permission name"})
+			return
+		}
+
+		role, err := database.FindDocumentById[model.Role](roleDbQueryParams, roleId)
+
+		if err != nil {
+			if err == mongo.ErrNoDocuments {
+				ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"message": "role not found"})
+				return
+			}
+
+			ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "failed to query role: " + err.Error()})
+			return
+		}
+
+		hasPermission := util.ContainsPerm(permission, role.Permissions)
+		if hasPermission {
+			ctx.AbortWithStatus(http.StatusConflict)
+			return
+		}
+
+		role.Permissions = append(role.Permissions, permission)
+
+		insertCount, err := database.UpdateOne[model.Role](roleDbQueryParams, role.ID, role)
+
+		if err != nil || insertCount <= 0 {
+			ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "failed to update document"})
+			return
+		}
+
+		err = audit.CreateAndSaveEntry(audit.CreateEntryParams{
+			MongoClient: controller.DB,
+			Initiator:   accountIdHex,
+			IP:          ctx.ClientIP(),
+			EventName:   audit.GRANT_ROLE_PERMISSION,
+			Context:     []string{"role id: " + roleIdHex.Hex(), "role name: " + role.Name},
+		})
+
+		if err != nil {
+			fmt.Println("failed to save audit entry: ", err)
+		}
+
+		ctx.Status(http.StatusOK)
 	}
 }
 
+// RevokeRolePermission revokes a specific permission from a specific role
 func (controller *AresController) RevokeRolePermission() gin.HandlerFunc {
-	return func(ctx *gin.Context) {
+	roleDbQueryParams := database.QueryParams{
+		MongoClient:    controller.DB,
+		DatabaseName:   controller.DatabaseName,
+		CollectionName: controller.CollectionName,
+	}
 
+	return func(ctx *gin.Context) {
+		attachedPermissions := ctx.Keys["attachedPermissions"].([]model.Permission)
+		if !util.ContainsPerm(model.GRANT_ROLES, attachedPermissions) {
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "insufficient permissions"})
+			return
+		}
+
+		accountId := ctx.GetString("accountId")
+		accountIdHex, err := primitive.ObjectIDFromHex(accountId)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "failed to unmarshal account id"})
+			return
+		}
+
+		roleId := ctx.Param("roleId")
+		roleIdHex, err := primitive.ObjectIDFromHex(roleId)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "failed to unmarshal role id"})
+			return
+		}
+
+		var permission model.Permission
+		err = ctx.ShouldBind(&permission)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "invalid permission name"})
+			return
+		}
+
+		role, err := database.FindDocumentById[model.Role](roleDbQueryParams, roleId)
+
+		if err != nil {
+			if err == mongo.ErrNoDocuments {
+				ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"message": "role not found"})
+				return
+			}
+
+			ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "failed to query role: " + err.Error()})
+			return
+		}
+
+		hasPermission := util.ContainsPerm(permission, role.Permissions)
+		if !hasPermission {
+			ctx.AbortWithStatus(http.StatusNotFound)
+			return
+		}
+
+		var permissions []model.Permission
+		for _, perm := range role.Permissions {
+			if perm == permission {
+				continue
+			}
+
+			permissions = append(permissions, perm)
+		}
+
+		role.Permissions = permissions
+		insertCount, err := database.UpdateOne[model.Role](roleDbQueryParams, role.ID, role)
+
+		if err != nil || insertCount <= 0 {
+			ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "failed to update document"})
+			return
+		}
+
+		err = audit.CreateAndSaveEntry(audit.CreateEntryParams{
+			MongoClient: controller.DB,
+			Initiator:   accountIdHex,
+			IP:          ctx.ClientIP(),
+			EventName:   audit.REVOKE_ROLE_PERMISSION,
+			Context:     []string{"role id: " + roleIdHex.Hex(), "role name: " + role.Name},
+		})
+
+		if err != nil {
+			fmt.Println("failed to save audit entry: ", err)
+		}
+
+		ctx.Status(http.StatusOK)
 	}
 }

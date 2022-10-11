@@ -31,13 +31,6 @@ func ApplyRoleRoutes(router *gin.Engine, mongoClient *mongo.Client) {
 
 		v1Authorized.POST("/", ctrl.CreateRole())
 
-		/*
-			/grant/account/:accountId/:roleId
-			/grant/account/:accountId/:roleId
-
-			/grant/role/:roleId/:permissionName
-			/revoke/role/:roleId/:permissionName
-		*/
 		v1Authorized.PUT("/grant/account/:accountId/:roleId", ctrl.GrantRole())
 		v1Authorized.PUT("/grant/role/:roleId/:permissionName", ctrl.GrantRolePermission())
 		v1Authorized.PUT("/revoke/role/:roleId/:permissionName", ctrl.RevokeRolePermission())
