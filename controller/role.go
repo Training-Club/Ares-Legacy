@@ -57,7 +57,7 @@ func (controller *AresController) GetRolesByAccount() gin.HandlerFunc {
 		account, err := database.FindDocumentById[model.Account](database.QueryParams{
 			MongoClient:    controller.DB,
 			DatabaseName:   controller.DatabaseName,
-			CollectionName: controller.CollectionName,
+			CollectionName: "account",
 		}, accountId)
 
 		if err != nil {
