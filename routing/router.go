@@ -24,4 +24,5 @@ func ApplyRoutes(
 	ApplyFileUploadRoutes(engine, mongoClient, s3Client)
 	ApplyBlogRoutes(engine, mongoClient)
 	ApplyRoleRoutes(engine, mongoClient)
+	ApplyPermissionRoutes(engine, mongoClient)
 }
