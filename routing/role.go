@@ -23,6 +23,7 @@ func ApplyRoleRoutes(router *gin.Engine, mongoClient *mongo.Client) {
 		AccountCollectionName: "account",
 	}
 
+	// TODO: Implement grant/revoke role by account endpoints
 	v1Authorized := router.Group("/v1/role")
 	v1Authorized.Use(middleware.ValidateRequest(), permissionHandler.AttachPermissions())
 	{
@@ -33,9 +34,9 @@ func ApplyRoleRoutes(router *gin.Engine, mongoClient *mongo.Client) {
 
 		v1Authorized.PUT("/grant/account/:accountId/:roleId", ctrl.GrantRole())
 		v1Authorized.PUT("/grant/role/:roleId/:permissionName", ctrl.GrantRolePermission())
-		v1Authorized.PUT("/revoke/role/:roleId/:permissionName", ctrl.RevokeRolePermission())
 
-		v1Authorized.DELETE("/grant/account/:accountId/:roleId", ctrl.RevokeRole())
+		v1Authorized.DELETE("/revoke/role/:roleId/:permissionName", ctrl.RevokeRolePermission())
+		v1Authorized.DELETE("/revoke/account/:accountId/:roleId", ctrl.RevokeRole())
 		v1Authorized.DELETE("/:roleId", ctrl.DeleteRole())
 	}
 }

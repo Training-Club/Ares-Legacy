@@ -46,17 +46,6 @@ func (controller *AresController) AuthenticateWithToken() gin.HandlerFunc {
 			Type:     account.Type,
 		}
 
-		err = audit.CreateAndSaveEntry(audit.CreateEntryParams{
-			MongoClient: controller.DB,
-			Initiator:   account.ID,
-			IP:          ctx.ClientIP(),
-			EventName:   audit.AUTH_WITH_TOKEN,
-		})
-
-		if err != nil {
-			fmt.Println("failed to save audit entry: ", err)
-		}
-
 		ctx.JSON(http.StatusOK, basic)
 	}
 }
@@ -230,20 +219,6 @@ func (controller *AresController) RefreshToken() gin.HandlerFunc {
 		if err != nil {
 			ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "failed to generate new access token"})
 			return
-		}
-
-		accountIdHex, err := primitive.ObjectIDFromHex(accountId)
-		if err == nil {
-			err = audit.CreateAndSaveEntry(audit.CreateEntryParams{
-				MongoClient: controller.DB,
-				Initiator:   accountIdHex,
-				IP:          ctx.ClientIP(),
-				EventName:   audit.REQUEST_REFRESH_TOKEN,
-			})
-
-			if err != nil {
-				fmt.Println("failed to save audit entry: ", err)
-			}
 		}
 
 		ctx.JSON(http.StatusOK, gin.H{"access_token": newAccessToken})
