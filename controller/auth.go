@@ -52,7 +52,7 @@ func (controller *AresController) AuthenticateWithToken() gin.HandlerFunc {
 
 // AuthenticateStandardCredentials authenticates an email/password
 // and generates a new JWT if the password matches
-func (controller *AresController) AuthenticateStandardCredentials() gin.HandlerFunc {
+func (controller *AresController) AuthenticateStandardCredentials(secure bool) gin.HandlerFunc {
 	conf := config.Get()
 
 	accessTokenPublicKey := conf.Auth.AccessTokenPublicKey
@@ -133,13 +133,6 @@ func (controller *AresController) AuthenticateStandardCredentials() gin.HandlerF
 			return
 		}
 
-		var cookieDomain string
-		if isReleaseVersion {
-			cookieDomain = "*.trainingclubapp.com"
-		} else {
-			cookieDomain = ".localhost"
-		}
-
 		err = audit.CreateAndSaveEntry(audit.CreateEntryParams{
 			MongoClient: controller.DB,
 			Initiator:   account.ID,
@@ -151,18 +144,27 @@ func (controller *AresController) AuthenticateStandardCredentials() gin.HandlerF
 			fmt.Println("failed to save audit entry: ", err)
 		}
 
-		ctx.SetSameSite(http.SameSiteNoneMode)
-		ctx.SetCookie(
-			"refresh_token",
-			refreshToken,
-			refreshTokenTTL,
-			"/",
-			cookieDomain,
-			true,
-			true,
-		)
+		if secure {
+			var cookieDomain string
+			if isReleaseVersion {
+				cookieDomain = "*.trainingclubapp.com"
+			} else {
+				cookieDomain = ".localhost"
+			}
 
-		ctx.JSON(http.StatusOK, gin.H{"account": basic, "token": accessToken})
+			ctx.SetSameSite(http.SameSiteNoneMode)
+			ctx.SetCookie(
+				"refresh_token",
+				refreshToken,
+				refreshTokenTTL,
+				"/",
+				cookieDomain,
+				true,
+				true,
+			)
+		}
+
+		ctx.JSON(http.StatusOK, gin.H{"account": basic, "token": accessToken, "refresh_token": refreshToken})
 	}
 }
 
@@ -227,7 +229,7 @@ func (controller *AresController) RefreshToken() gin.HandlerFunc {
 
 // Logout accepts a refresh_token then invalidates it in the cache
 // then returns a success 200
-func (controller *AresController) Logout() gin.HandlerFunc {
+func (controller *AresController) Logout(secure bool) gin.HandlerFunc {
 	conf := config.Get()
 	refreshPublicKey := conf.Auth.RefreshTokenPublicKey
 	isReleaseVersion := conf.Gin.Mode == "release"
@@ -276,15 +278,17 @@ func (controller *AresController) Logout() gin.HandlerFunc {
 			}
 		}
 
-		ctx.SetCookie(
-			"refresh_token",
-			refreshToken,
-			-1,
-			"/",
-			cookieDomain,
-			true,
-			true,
-		)
+		if secure {
+			ctx.SetCookie(
+				"refresh_token",
+				refreshToken,
+				-1,
+				"/",
+				cookieDomain,
+				true,
+				true,
+			)
+		}
 
 		ctx.Status(http.StatusOK)
 	}

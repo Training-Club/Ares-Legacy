@@ -29,7 +29,9 @@ func ApplyAccountRoutes(router *gin.Engine, mongoClient *mongo.Client) {
 		v1.GET("/availability/:key/:value", ctrl.GetAccountAvailability())
 		v1.GET("/count", ctrl.GetAccountCount())
 
-		v1.POST("/recipe/standard", ctrl.CreateStandardAccount())
+		v1.POST("/recipe/standard", ctrl.CreateStandardAccount(false))
+		v1.POST("/recipe/standard/secure", ctrl.CreateStandardAccount(true))
+
 		v1.POST("/recipe/apple")
 		v1.POST("/recipe/google")
 	}
