@@ -22,7 +22,8 @@ func ApplyAuthenticationRoutes(
 
 	v1 := router.Group("/v1/auth")
 	{
-		v1.GET("/refresh", ctrl.RefreshToken())
+		v1.GET("/refresh", ctrl.RefreshToken(true))
+		v1.GET("/refresh/:refreshToken", ctrl.RefreshToken(false))
 
 		v1.POST("/secure", ctrl.AuthenticateStandardCredentials(true))
 		v1.POST("/", ctrl.AuthenticateStandardCredentials(false))

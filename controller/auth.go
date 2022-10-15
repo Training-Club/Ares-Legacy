@@ -174,17 +174,24 @@ func (controller *AresController) AuthenticateStandardCredentials(secure bool) g
 //   - Query Redis Cache by Refresh Token for accountId value
 //   - Verify that the accountId belongs to an existing account
 //   - Generates a new access_token and returns in a success 200 response
-func (controller *AresController) RefreshToken() gin.HandlerFunc {
+func (controller *AresController) RefreshToken(secure bool) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		var refreshToken string
+		var err error
+
 		conf := config.Get()
 		accessTokenPublicKey := conf.Auth.AccessTokenPublicKey
 		accessTokenTTL := conf.Auth.AccessTokenTTL
 		refreshPublicKey := conf.Auth.RefreshTokenPublicKey
 
-		refreshToken, err := ctx.Cookie("refresh_token")
-		if err != nil {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "failed to read refresh_token cookie"})
-			return
+		if secure {
+			refreshToken, err = ctx.Cookie("refresh_token")
+			if err != nil {
+				ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "failed to read refresh_token cookie"})
+				return
+			}
+		} else {
+			refreshToken = ctx.Param("refreshToken")
 		}
 
 		_, err = middleware.ValidateToken(refreshToken, refreshPublicKey)
