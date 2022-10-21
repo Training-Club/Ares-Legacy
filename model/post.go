@@ -23,6 +23,11 @@ type ContentItem struct {
 	Type        ContentType `json:"type" bson:"type" binding:"required"`
 }
 
+type SignedContentItem struct {
+	Key string `json:"key" binding:"required"`
+	Url string `json:"url" binding:"required"`
+}
+
 type Like struct {
 	ID       primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
 	Author   primitive.ObjectID `json:"author" bson:"author" binding:"required"`

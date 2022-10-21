@@ -2,6 +2,7 @@ package controller
 
 import (
 	"ares/audit"
+	"ares/config"
 	"ares/database"
 	"ares/model"
 	"ares/util"
@@ -17,6 +18,93 @@ import (
 	"strconv"
 	"time"
 )
+
+// GetContentUrlByID accepts a post ID and returns an array of signed
+// content matching the provided post IDs in the content array
+func (controller *AresController) GetContentUrlByID() gin.HandlerFunc {
+	conf := config.Get()
+	bucket := conf.S3.Bucket
+
+	return func(ctx *gin.Context) {
+		postId := ctx.Param("id")
+		requestAccountId := ctx.GetString("accountId")
+
+		_, err := primitive.ObjectIDFromHex(postId)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "post id is not a hex"})
+			return
+		}
+
+		requestAccountIdHex, err := primitive.ObjectIDFromHex(requestAccountId)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "request id is not a hex"})
+			return
+		}
+
+		post, err := database.FindDocumentById[model.Post](database.QueryParams{
+			MongoClient:    controller.DB,
+			DatabaseName:   controller.DatabaseName,
+			CollectionName: controller.CollectionName,
+		}, postId)
+
+		if err != nil {
+			if err == mongo.ErrNoDocuments {
+				ctx.AbortWithStatus(http.StatusNotFound)
+				return
+			}
+
+			ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "failed to perform post query: " + err.Error()})
+			return
+		}
+
+		/*
+			post privacy possibilities:
+			does the author have this user blocked - deny
+			is the post followers only and the requester is not following AND they are not the owner - deny
+			is the post private and the viewer isn't the owner - deny
+		*/
+
+		// TODO: Check if post author has user blocked
+
+		if post.Privacy == model.FOLLOWER_ONLY && post.Author != requestAccountIdHex {
+			isFollowing, err := IsFollowing(controller.DB, controller.DatabaseName, "follow", requestAccountIdHex, post.Author)
+			if err != nil {
+				ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "failed to look up follow record: " + err.Error()})
+				return
+			}
+
+			if !isFollowing {
+				ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "insufficient permissions"})
+				return
+			}
+		}
+
+		if post.Privacy == model.PRIVATE {
+			if requestAccountIdHex != post.Author {
+				ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "insufficient permissions"})
+				return
+			}
+		}
+
+		var signedContent []model.SignedContentItem
+		for _, content := range post.Content {
+			signed, err := database.SignUrl(controller.S3, bucket, content.Destination)
+			if err != nil {
+				ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "failed to sign url for post content"})
+				return
+			}
+
+			signedEntry := model.SignedContentItem{
+				Key: content.Destination,
+				Url: signed,
+			}
+
+			signedContent = append(signedContent, signedEntry)
+		}
+
+		ctx.JSON(http.StatusOK, gin.H{"result": signedContent})
+	}
+}
 
 // GetPostByID returns a single post object matching the provided ID
 func (controller *AresController) GetPostByID() gin.HandlerFunc {

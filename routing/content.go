@@ -16,6 +16,7 @@ func ApplyContentRoutes(router *gin.Engine, mongoClient *mongo.Client, s3Client 
 
 	postCtrl := controller.AresController{
 		DB:             mongoClient,
+		S3:             s3Client,
 		DatabaseName:   DATABASE_NAME,
 		CollectionName: "post",
 	}
@@ -50,6 +51,9 @@ func ApplyContentRoutes(router *gin.Engine, mongoClient *mongo.Client, s3Client 
 		// get post objects
 		v1Authorized.GET("/post/id/:id", postCtrl.GetPostByID())
 		v1Authorized.GET("/post/search", postCtrl.GetPostsByQuery())
+
+		// get content url
+		v1Authorized.GET("/post/content/:id", postCtrl.GetContentUrlByID())
 
 		// get like list (paginated)
 		v1Authorized.GET("/post/id/:id/likes", likeCtrl.GetLikeList("post"))
