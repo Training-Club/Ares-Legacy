@@ -328,6 +328,7 @@ func (controller *AresController) GetLikeCount(key string) gin.HandlerFunc {
 // in a success 200 OK response
 func (controller *AresController) CreatePost(s3Client *s3.Client, bucket string) gin.HandlerFunc {
 	type Params struct {
+		Session  primitive.ObjectID  `json:"session,omitempty"`
 		Location primitive.ObjectID  `json:"location,omitempty"`
 		Text     string              `json:"text,omitempty"`
 		Content  []model.ContentItem `json:"content" binding:"required"`
@@ -367,6 +368,7 @@ func (controller *AresController) CreatePost(s3Client *s3.Client, bucket string)
 
 		post := model.Post{
 			Author:    authorHex,
+			Session:   params.Session,
 			Location:  params.Location,
 			Text:      params.Text,
 			Content:   params.Content,

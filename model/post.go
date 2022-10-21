@@ -9,6 +9,7 @@ type Post struct {
 	ID        primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
 	Author    primitive.ObjectID `json:"author" bson:"author" binding:"required"`
 	Location  primitive.ObjectID `json:"location,omitempty" bson:"location,omitempty"`
+	Session   primitive.ObjectID `json:"session,omitempty" bson:"session,omitempty"`
 	Text      string             `json:"text,omitempty" bson:"text,omitempty"`
 	Content   []ContentItem      `json:"content" bson:"content" binding:"required"`
 	CreatedAt time.Time          `json:"createdAt" bson:"createdAt" binding:"required"`

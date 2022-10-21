@@ -56,6 +56,7 @@ func (controller *AresController) GetExerciseSessionByQuery() gin.HandlerFunc {
 		sessionName, sessionNamePresent := ctx.GetQuery("name")
 		before, beforePresent := ctx.GetQuery("before")
 		exerciseNames, exerciseNamesPresent := ctx.GetQueryArray("exercise")
+		authorId, authorIdPresent := ctx.GetQuery("author")
 		page := ctx.DefaultQuery("page", "0")
 
 		if !sessionNamePresent && !beforePresent && !exerciseNamesPresent {
@@ -95,6 +96,16 @@ func (controller *AresController) GetExerciseSessionByQuery() gin.HandlerFunc {
 			}
 
 			filter["exercises.exerciseName"] = bson.M{"$in": exerciseNames}
+		}
+
+		if authorIdPresent {
+			authorIdHex, err := primitive.ObjectIDFromHex(authorId)
+			if err != nil {
+				ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "failed to unmarshal author id"})
+				return
+			}
+
+			filter["author"] = bson.M{"author": authorIdHex}
 		}
 
 		pageNumber, err := strconv.Atoi(page)
