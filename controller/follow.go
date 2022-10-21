@@ -15,6 +15,38 @@ import (
 	"time"
 )
 
+// IsFollowing returns true if the provided followingId
+// and followerId has an existing record in the database
+func IsFollowing(
+	mongoClient *mongo.Client,
+	databaseName string,
+	collectionName string,
+	followingId primitive.ObjectID,
+	followerId primitive.ObjectID,
+) (bool, error) {
+	filter := bson.M{
+		"$and": bson.A{
+			bson.M{"followingId": followingId},
+			bson.M{"followedId": followerId},
+		}}
+
+	_, err := database.FindDocumentByFilter[model.Follow](database.QueryParams{
+		MongoClient:    mongoClient,
+		DatabaseName:   databaseName,
+		CollectionName: collectionName,
+	}, filter)
+
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return false, nil
+		}
+
+		return false, err
+	}
+
+	return true, nil
+}
+
 // IsFollowing returns a success 200 if the provided following id and
 // followed account id have an existing follower record in the database
 func (controller *AresController) IsFollowing() gin.HandlerFunc {
@@ -46,29 +78,13 @@ func (controller *AresController) IsFollowing() gin.HandlerFunc {
 			return
 		}
 
-		filter := bson.M{
-			"$and": bson.A{
-				bson.M{"followingId": followingHex},
-				bson.M{"followedId": followedHex},
-			}}
-
-		record, err := database.FindDocumentByFilter[model.Follow](database.QueryParams{
-			MongoClient:    controller.DB,
-			DatabaseName:   controller.DatabaseName,
-			CollectionName: controller.CollectionName,
-		}, filter)
-
+		isFollowing, err := IsFollowing(controller.DB, controller.DatabaseName, controller.CollectionName, followingHex, followedHex)
 		if err != nil {
-			if err == mongo.ErrNoDocuments {
-				ctx.AbortWithStatus(http.StatusNotFound)
-				return
-			}
-
-			ctx.AbortWithStatus(http.StatusInternalServerError)
+			ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "failed to query follow record: " + err.Error()})
 			return
 		}
 
-		ctx.JSON(http.StatusOK, gin.H{"result": record})
+		ctx.JSON(http.StatusOK, gin.H{"result": isFollowing})
 	}
 }
 
