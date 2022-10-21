@@ -67,13 +67,13 @@ func ApplyContentRoutes(router *gin.Engine, mongoClient *mongo.Client, s3Client 
 		v1Authorized.GET("/comment/id/:id/comments/count", commentCtrl.GetCommentCount("comment"))
 
 		// create content, add likes
-		v1Authorized.POST("/post/", postCtrl.CreatePost(s3Client, conf.S3.Bucket))
-		v1Authorized.POST("/comment/", commentCtrl.CreateComment())
-		v1Authorized.POST("/like/", likeCtrl.AddLike())
+		v1Authorized.POST("/post", postCtrl.CreatePost(s3Client, conf.S3.Bucket))
+		v1Authorized.POST("/comment", commentCtrl.CreateComment())
+		v1Authorized.POST("/like", likeCtrl.AddLike())
 
 		// update content
-		v1Authorized.PUT("/post/", postCtrl.UpdatePost())
-		v1Authorized.PUT("/comment/", commentCtrl.UpdateComment())
+		v1Authorized.PUT("/post", postCtrl.UpdatePost())
+		v1Authorized.PUT("/comment", commentCtrl.UpdateComment())
 
 		// delete content
 		v1Authorized.DELETE("/post/:id", postCtrl.DeletePost())
