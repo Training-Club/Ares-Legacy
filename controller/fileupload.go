@@ -26,7 +26,7 @@ func (controller *AresController) UploadFile(s3Client *s3.Client, bucket string)
 		}
 
 		files := form.File["upload[]"]
-		ids := make([]string, len(files)/2)
+		var ids []string
 
 		for _, fileHeader := range files {
 			file, err := fileHeader.Open()
