@@ -56,7 +56,7 @@ func GetS3Client(params *S3Configuration) (*s3.Client, error) {
 // UploadFile accepts an S3 client instance, a bucket name, and
 // a file buffer to send to the S3 instance.
 //
-// The file type is automatically determined by AWS SDK
+// # The file type is automatically determined by AWS SDK
 //
 // If successful, the filename (UUID) will be returned
 func UploadFile(s3Client *s3.Client, bucket string, file []byte) (string, error) {
@@ -79,6 +79,27 @@ func UploadFile(s3Client *s3.Client, bucket string, file []byte) (string, error)
 	}
 
 	return id.String(), nil
+}
+
+// SignUrl generates a new temporary pre-signed url that grants
+// a user access to view content within the provided bucket
+func SignUrl(s3Client *s3.Client, bucket string, filename string) (string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(60)*time.Second)
+	defer cancel()
+
+	presignClient := s3.NewPresignClient(s3Client)
+
+	input := &s3.GetObjectInput{
+		Bucket: aws.String(bucket),
+		Key:    aws.String(filename),
+	}
+
+	duration := func(po *s3.PresignOptions) {
+		po.Expires = 30 * time.Second
+	}
+
+	presignResult, err := presignClient.PresignGetObject(ctx, input, duration)
+	return presignResult.URL, err
 }
 
 // Exists accepts an S3 client instance, a bucket name, and
