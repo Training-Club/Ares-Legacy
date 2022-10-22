@@ -11,6 +11,11 @@ import (
 )
 
 func (controller *AresController) UploadFile(s3Client *s3.Client, bucket string) gin.HandlerFunc {
+	type UploadedFile struct {
+		Key      string `json:"key"`
+		Filename string `json:"filename"`
+	}
+
 	return func(ctx *gin.Context) {
 		accountId := ctx.GetString("accountId")
 		accountIdHex, err := primitive.ObjectIDFromHex(accountId)
@@ -26,7 +31,7 @@ func (controller *AresController) UploadFile(s3Client *s3.Client, bucket string)
 		}
 
 		files := form.File["upload[]"]
-		var ids []string
+		var result []UploadedFile
 
 		for _, fileHeader := range files {
 			file, err := fileHeader.Open()
@@ -50,7 +55,7 @@ func (controller *AresController) UploadFile(s3Client *s3.Client, bucket string)
 				return
 			}
 
-			ids = append(ids, id)
+			result = append(result, UploadedFile{Key: id, Filename: fileHeader.Filename})
 		}
 
 		err = audit.CreateAndSaveEntry(audit.CreateEntryParams{
@@ -58,13 +63,12 @@ func (controller *AresController) UploadFile(s3Client *s3.Client, bucket string)
 			Initiator:   accountIdHex,
 			IP:          ctx.ClientIP(),
 			EventName:   audit.UPLOAD_FILE,
-			Context:     ids,
 		})
 
 		if err != nil {
 			fmt.Println("failed to save audit entry: ", err)
 		}
 
-		ctx.JSON(http.StatusOK, gin.H{"result": ids})
+		ctx.JSON(http.StatusOK, gin.H{"result": result})
 	}
 }
