@@ -343,14 +343,13 @@ func (controller *AresController) CreateStandardAccount(secure bool) gin.Handler
 			return
 		}
 
-		var hashedPwd string
 		hash, hashErr := bcrypt.GenerateFromPassword([]byte(params.Password), 8)
 		if hashErr != nil {
 			ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "failed to hash password: " + hashErr.Error()})
 			return
 		}
 
-		hashedPwd = string(hash)
+		hashedPwd := string(hash)
 
 		acc := model.Account{
 			Username: params.Username,

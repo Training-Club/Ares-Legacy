@@ -3,16 +3,18 @@ package routing
 import (
 	"ares/controller"
 	"ares/middleware"
+	"github.com/go-redis/redis/v9"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func ApplyAccountRoutes(router *gin.Engine, mongoClient *mongo.Client) {
+func ApplyAccountRoutes(router *gin.Engine, redisClient *redis.Client, mongoClient *mongo.Client) {
 	const DATABASE_NAME string = "prod"
 
 	ctrl := controller.AresController{
 		DB:             mongoClient,
+		RedisCache:     redisClient,
 		CollectionName: "account",
 		DatabaseName:   DATABASE_NAME,
 	}
