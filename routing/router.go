@@ -15,7 +15,7 @@ func ApplyRoutes(
 ) {
 	ApplyHealthCheckRoutes(engine, mongoClient)
 	ApplyAuthenticationRoutes(engine, mongoClient, redisClient)
-	ApplyAccountRoutes(engine, mongoClient)
+	ApplyAccountRoutes(engine, redisClient, mongoClient)
 	ApplyExerciseInfoRoutes(engine, mongoClient)
 	ApplyExerciseRoutes(engine, mongoClient)
 	ApplyFollowRoutes(engine, mongoClient)
