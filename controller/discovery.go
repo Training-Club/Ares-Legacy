@@ -109,6 +109,12 @@ func (controller *AresController) GetFeedContent() gin.HandlerFunc {
 			return
 		}
 
+		// TODO: Remove this when we add additional queries
+		if postsFromFollowing == nil {
+			ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"message": "no posts found"})
+			return
+		}
+
 		ctx.JSON(http.StatusOK, gin.H{"result": postsFromFollowing})
 	}
 }
