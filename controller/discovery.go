@@ -39,7 +39,7 @@ func getPostsFromFollowed(
 
 	var followingIds []primitive.ObjectID
 	for _, document := range followedList {
-		followingIds = append(followingIds, document.FollowingID)
+		followingIds = append(followingIds, document.FollowedID)
 	}
 
 	filter := bson.M{}
@@ -77,7 +77,7 @@ func (controller *AresController) GetFeedContent() gin.HandlerFunc {
 		}
 
 		defaultTime := time.Now()
-		defaultTime = defaultTime.AddDate(0, 0, -3)
+		defaultTime = defaultTime.AddDate(0, -1, 0)
 		afterTime := ctx.DefaultQuery("after", defaultTime.Format(time.RFC3339))
 		after, err := time.Parse(time.RFC3339, afterTime)
 		if err != nil {
