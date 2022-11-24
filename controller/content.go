@@ -95,8 +95,9 @@ func (controller *AresController) GetContentUrlByID() gin.HandlerFunc {
 			}
 
 			signedEntry := model.SignedContentItem{
-				Key: content.Destination,
-				Url: signed,
+				Key:  content.Destination,
+				Url:  signed,
+				Type: content.Type,
 			}
 
 			signedContent = append(signedContent, signedEntry)
@@ -722,6 +723,46 @@ func (controller *AresController) RemoveLike() gin.HandlerFunc {
 		}
 
 		ctx.Status(http.StatusOK)
+	}
+}
+
+// IsLiked returns a like record matching the provided post id
+func (controller *AresController) IsLiked() gin.HandlerFunc {
+	dbQueryParams := database.QueryParams{
+		MongoClient:    controller.DB,
+		DatabaseName:   controller.DatabaseName,
+		CollectionName: controller.CollectionName,
+	}
+
+	return func(ctx *gin.Context) {
+		accountId := ctx.GetString("accountId")
+		postId := ctx.Param("id")
+
+		accountIdHex, err := primitive.ObjectIDFromHex(accountId)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "bad account id hex"})
+			return
+		}
+
+		postIdHex, err := primitive.ObjectIDFromHex(postId)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "bad post id hex"})
+		}
+
+		filter := bson.M{"post": postIdHex, "author": accountIdHex}
+		existingLike, err := database.FindDocumentByFilter[model.Like](dbQueryParams, filter)
+
+		if err != nil {
+			if err == mongo.ErrNoDocuments {
+				ctx.AbortWithStatus(http.StatusNotFound)
+				return
+			}
+
+			ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "failed to query existing like: " + err.Error()})
+			return
+		}
+
+		ctx.JSON(http.StatusOK, existingLike)
 	}
 }
 

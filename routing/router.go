@@ -25,4 +25,5 @@ func ApplyRoutes(
 	ApplyBlogRoutes(engine, mongoClient)
 	ApplyRoleRoutes(engine, mongoClient)
 	ApplyPermissionRoutes(engine, mongoClient)
+	ApplyDiscoveryRoutes(engine, mongoClient)
 }
