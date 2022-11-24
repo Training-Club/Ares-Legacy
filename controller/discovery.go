@@ -42,6 +42,9 @@ func getPostsFromFollowed(
 		followingIds = append(followingIds, document.FollowedID)
 	}
 
+	// append self to self posts
+	followingIds = append(followingIds, accountId)
+
 	filter := bson.M{}
 	filter["author"] = bson.M{"$in": followingIds}
 	filter["createdAt"] = bson.M{"$gte": primitive.NewDateTimeFromTime(after)}
