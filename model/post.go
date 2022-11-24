@@ -24,8 +24,9 @@ type ContentItem struct {
 }
 
 type SignedContentItem struct {
-	Key string `json:"key" binding:"required"`
-	Url string `json:"url" binding:"required"`
+	Key  string      `json:"key" binding:"required"`
+	Url  string      `json:"url" binding:"required"`
+	Type ContentType `json:"type" binding:"required"`
 }
 
 type Like struct {

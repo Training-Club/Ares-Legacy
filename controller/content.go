@@ -95,8 +95,9 @@ func (controller *AresController) GetContentUrlByID() gin.HandlerFunc {
 			}
 
 			signedEntry := model.SignedContentItem{
-				Key: content.Destination,
-				Url: signed,
+				Key:  content.Destination,
+				Url:  signed,
+				Type: content.Type,
 			}
 
 			signedContent = append(signedContent, signedEntry)
