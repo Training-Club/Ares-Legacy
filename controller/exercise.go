@@ -59,7 +59,7 @@ func (controller *AresController) GetExerciseSessionByQuery() gin.HandlerFunc {
 		authorId, authorIdPresent := ctx.GetQuery("author")
 		page := ctx.DefaultQuery("page", "0")
 
-		if !sessionNamePresent && !beforePresent && !exerciseNamesPresent {
+		if !sessionNamePresent && !beforePresent && !exerciseNamesPresent && !authorIdPresent {
 			ctx.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
@@ -105,7 +105,7 @@ func (controller *AresController) GetExerciseSessionByQuery() gin.HandlerFunc {
 				return
 			}
 
-			filter["author"] = bson.M{"author": authorIdHex}
+			filter["author"] = authorIdHex
 		}
 
 		pageNumber, err := strconv.Atoi(page)
