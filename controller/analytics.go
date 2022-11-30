@@ -51,7 +51,7 @@ func (controller *AresController) GetRecordsByExercise() gin.HandlerFunc {
 			MongoClient:    controller.DB,
 			DatabaseName:   controller.DatabaseName,
 			CollectionName: controller.CollectionName,
-		}, filter, options.Find().SetLimit(100).SetSkip(int64(pageNumber*100)).SetSort(bson.D{{Key: "timestamp", Value: -1}}))
+		}, filter, options.Find().SetLimit(500).SetSkip(int64(pageNumber*500)).SetSort(bson.D{{Key: "timestamp", Value: -1}}))
 
 		if err != nil {
 			if err == mongo.ErrNoDocuments {
