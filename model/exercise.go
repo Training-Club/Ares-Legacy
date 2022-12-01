@@ -49,7 +49,7 @@ type ExerciseValueDistance struct {
 }
 
 type ExerciseValueTime struct {
-	Value            uint32 `json:"timeValue,omitempty" bson:"timeValue,omitempty" binding:"required"`
+	Value            uint64 `json:"timeValue,omitempty" bson:"timeValue,omitempty" binding:"required"`
 	ShowMilliseconds bool   `json:"timeRenderMillis,omitempty" bson:"timeRenderMillis,omitempty" binding:"required"`
 }
 
