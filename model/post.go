@@ -11,7 +11,7 @@ type Post struct {
 	Location  primitive.ObjectID `json:"location,omitempty" bson:"location,omitempty"`
 	Session   primitive.ObjectID `json:"session,omitempty" bson:"session,omitempty"`
 	Text      string             `json:"text,omitempty" bson:"text,omitempty"`
-	Content   []ContentItem      `json:"content" bson:"content" binding:"required"`
+	Content   []ContentItem      `json:"content,omitempty" bson:"content,omitempty"`
 	CreatedAt time.Time          `json:"createdAt" bson:"createdAt" binding:"required"`
 	EditedAt  time.Time          `json:"editedAt,omitempty" bson:"editedAt,omitempty"`
 	Tags      []string           `json:"tags,omitempty" bson:"tags,omitempty"`

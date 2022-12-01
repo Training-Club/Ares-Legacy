@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -23,9 +24,11 @@ import (
 func (controller *AresController) GetExerciseSessionByID() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		id := ctx.Param("value")
-		match := util.IsAlphanumeric(id)
-		if match {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "value must be alphanumeric"})
+		idHex, err := primitive.ObjectIDFromHex(id)
+
+		// TODO: band-aid fix, replace with something more official later
+		if err != nil || strings.HasPrefix(id, "000") || idHex.IsZero() {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "invalid session id"})
 			return
 		}
 

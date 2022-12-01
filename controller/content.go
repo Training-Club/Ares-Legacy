@@ -26,6 +26,7 @@ func (controller *AresController) GetContentUrlByID() gin.HandlerFunc {
 	bucket := conf.S3.Bucket
 
 	return func(ctx *gin.Context) {
+		var signedContent []model.SignedContentItem
 		postId := ctx.Param("id")
 		requestAccountId := ctx.GetString("accountId")
 
@@ -54,6 +55,11 @@ func (controller *AresController) GetContentUrlByID() gin.HandlerFunc {
 			}
 
 			ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "failed to perform post query: " + err.Error()})
+			return
+		}
+
+		if len(post.Content) <= 0 {
+			ctx.AbortWithStatusJSON(http.StatusOK, gin.H{"result": signedContent})
 			return
 		}
 
@@ -86,7 +92,6 @@ func (controller *AresController) GetContentUrlByID() gin.HandlerFunc {
 			}
 		}
 
-		var signedContent []model.SignedContentItem
 		for _, content := range post.Content {
 			signed, err := database.SignUrl(controller.S3, bucket, content.Destination)
 			if err != nil {
@@ -420,7 +425,7 @@ func (controller *AresController) CreatePost(s3Client *s3.Client, bucket string)
 		Session  primitive.ObjectID  `json:"session,omitempty"`
 		Location primitive.ObjectID  `json:"location,omitempty"`
 		Text     string              `json:"text,omitempty"`
-		Content  []model.ContentItem `json:"content" binding:"required"`
+		Content  []model.ContentItem `json:"content,omitempty"`
 		Tags     []string            `json:"tags,omitempty"`
 		Privacy  model.PrivacyLevel  `json:"privacy,omitempty"`
 	}
@@ -432,6 +437,11 @@ func (controller *AresController) CreatePost(s3Client *s3.Client, bucket string)
 		err := ctx.ShouldBindJSON(&params)
 		if err != nil {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "failed to bind params: " + err.Error()})
+			return
+		}
+
+		if len(params.Content) <= 0 && params.Session.IsZero() {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "both session and content can not be empty"})
 			return
 		}
 
