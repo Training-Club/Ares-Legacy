@@ -95,7 +95,7 @@ func SignUrl(s3Client *s3.Client, bucket string, filename string) (string, error
 	}
 
 	duration := func(po *s3.PresignOptions) {
-		po.Expires = 30 * time.Second
+		po.Expires = 1 * time.Hour
 	}
 
 	presignResult, err := presignClient.PresignGetObject(ctx, input, duration)
