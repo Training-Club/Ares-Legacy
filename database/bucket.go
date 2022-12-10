@@ -8,7 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/google/uuid"
-	"net/http"
+	"github.com/h2non/filetype"
 	"time"
 )
 
@@ -64,16 +64,17 @@ func UploadFile(s3Client *s3.Client, bucket string, file []byte) (string, error)
 	defer cancel()
 
 	id := uuid.New()
+	ft, err := filetype.Match(file)
 
 	input := &s3.PutObjectInput{
 		Bucket:      aws.String(bucket),
 		Key:         aws.String(id.String()),
 		Body:        bytes.NewReader(file),
-		ContentType: aws.String(http.DetectContentType(file)),
+		ContentType: aws.String(ft.MIME.Value),
 	}
 
 	// TODO: Determine if we want to use the returned metadata for anything here
-	_, err := s3Client.PutObject(ctx, input)
+	_, err = s3Client.PutObject(ctx, input)
 	if err != nil {
 		return "", err
 	}
